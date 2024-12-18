@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
  * @author sdnakhla
  */
 // FIXME Ensure logging statements are added BEFORE the return statement
+// FIXME Do not log constructors
 public class LogMethodAction extends AbstractLoggingAction {
 
 	private static final String guardedLogStatementTemplate = "if(%s.isDebugEnabled()) {\n	%s.debug(\"%s\");\n}";

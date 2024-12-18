@@ -6,6 +6,8 @@ import net.odyssi.log4jb.forms.GenericLogForm;
 import net.odyssi.log4jb.forms.GenericLogModel;
 import net.odyssi.log4jb.forms.ReadOnlyTableModel;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -14,6 +16,7 @@ import java.util.Set;
 
 public class GenericLogFormDialog extends DialogWrapper {
 
+	private static final Logger logger = LoggerFactory.getLogger(GenericLogFormDialog.class);
 	private GenericLogForm form = null;
 
 	private Set<String[]> globalVariables = null;
@@ -30,6 +33,7 @@ public class GenericLogFormDialog extends DialogWrapper {
 
 	public GenericLogFormDialog(@Nullable Project project, Set<String[]> globalVariables, Set<String[]> localVariables, Set<String[]> methodParameters) {
 		super(project);
+
 		this.globalVariables = globalVariables;
 		this.localVariables = localVariables;
 		this.methodParameters = methodParameters;
@@ -44,33 +48,36 @@ public class GenericLogFormDialog extends DialogWrapper {
 	}
 
 	protected void initTableModels() {
-		String[] columns = new String[] { "Name", "Type" };
+		if (logger.isDebugEnabled()) {
+			logger.debug("initTableModels() - start");
+		}
+		String[] columns = new String[]{"Name", "Type"};
 
 		DefaultTableModel globalVariablesModel = new ReadOnlyTableModel();
 		DefaultTableModel localVariablesModel = new ReadOnlyTableModel();
 		DefaultTableModel methodParametersModel = new ReadOnlyTableModel();
 
-		DefaultTableModel[] models = new DefaultTableModel[] { globalVariablesModel, localVariablesModel, methodParametersModel };
-		for(DefaultTableModel model : models) {
-			for(String column : columns) {
+		DefaultTableModel[] models = new DefaultTableModel[]{globalVariablesModel, localVariablesModel, methodParametersModel};
+		for (DefaultTableModel model : models) {
+			for (String column : columns) {
 				model.addColumn(column);
 			}
 		}
 
-		if(this.globalVariables != null) {
-			for(String[] row : this.globalVariables) {
+		if (this.globalVariables != null) {
+			for (String[] row : this.globalVariables) {
 				globalVariablesModel.addRow(row);
 			}
 		}
 
-		if(this.localVariables != null) {
-			for(String[] row : this.localVariables) {
+		if (this.localVariables != null) {
+			for (String[] row : this.localVariables) {
 				localVariablesModel.addRow(row);
 			}
 		}
 
-		if(this.methodParameters != null) {
-			for(String[] row : this.methodParameters) {
+		if (this.methodParameters != null) {
+			for (String[] row : this.methodParameters) {
 				methodParametersModel.addRow(row);
 			}
 		}
@@ -86,6 +93,9 @@ public class GenericLogFormDialog extends DialogWrapper {
 		this.form.getLocalVariablesTable().setModel(localVariablesModel);
 		this.form.getLocalVariablesTable().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		this.form.getLocalVariablesTable().getSelectionModel().addListSelectionListener(new GenericLogListSelectionEventListener(this.localVariables, this.selectedLocalVariables));
+		if (logger.isDebugEnabled()) {
+			logger.debug("initTableModels() - end");
+		}
 	}
 
 	/**
@@ -95,6 +105,13 @@ public class GenericLogFormDialog extends DialogWrapper {
 	 */
 	@Override
 	protected @Nullable JComponent createCenterPanel() {
+		if (logger.isDebugEnabled()) {
+			logger.debug("createCenterPanel() - start");
+		}
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("createCenterPanel() - end");
+		}
 		return this.form.getContentPanel();
 	}
 
@@ -103,6 +120,9 @@ public class GenericLogFormDialog extends DialogWrapper {
 	 * @return The log model
 	 */
 	public GenericLogModel buildLogModel() {
+		if (logger.isDebugEnabled()) {
+			logger.debug("buildLogModel() - start");
+		}
 		GenericLogModel model = new GenericLogModel();
 		model.setLogLevel((String) this.form.getLogLevel().getModel().getSelectedItem());
 		model.setLogMessage(this.form.getLogMessage().getText());
@@ -110,6 +130,9 @@ public class GenericLogFormDialog extends DialogWrapper {
 		model.setSelectedLocalVariables(this.selectedLocalVariables);
 		model.setSelectedMethodParameters(this.selectedMethodParameters);
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("buildLogModel() - end");
+		}
 		return model;
 	}
 }
