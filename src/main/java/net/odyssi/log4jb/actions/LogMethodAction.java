@@ -8,12 +8,15 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Generates beginning and ending log statements for the selected method
  *
  * @author sdnakhla
  */
+// FIXME Ensure logging statements are added BEFORE the return statement
 public class LogMethodAction extends AbstractLoggingAction {
 
 	private static final String guardedLogStatementTemplate = "if(%s.isDebugEnabled()) {\n	%s.debug(\"%s\");\n}";
@@ -21,17 +24,27 @@ public class LogMethodAction extends AbstractLoggingAction {
 	private static final String logStatementStart = " - start";
 
 	private static final String logStatementEnd = " - end";
+	private static final Logger logger = LoggerFactory.getLogger(LogMethodAction.class);
 
 	public void update(@NotNull AnActionEvent e) {
 		// Check if a Java class is selected
+		if (logger.isDebugEnabled()) {
+			logger.debug("update(AnActionEvent) - start");
+		}
 		boolean isEnabled = isJavaMethodSelected(e);
 
 		// Enable or disable the action
 		e.getPresentation().setEnabled(isEnabled);
+		if (logger.isDebugEnabled()) {
+			logger.debug("update(AnActionEvent) - end");
+		}
 	}
 
 	@Override
 	public void actionPerformed(AnActionEvent e) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("actionPerformed(AnActionEvent) - start");
+		}
 		Project proj = e.getProject();
 		Editor editor = e.getRequiredData(CommonDataKeys.EDITOR);
 		PsiClass selectedClass = getSelectedCursorClass(proj, editor);
@@ -41,6 +54,9 @@ public class LogMethodAction extends AbstractLoggingAction {
 			declareLogger(selectedClass);
 			this.addLoggingToMethod(selectedClass, method);
 		});
+		if (logger.isDebugEnabled()) {
+			logger.debug("actionPerformed(AnActionEvent) - end");
+		}
 	}
 
 	/**
@@ -50,6 +66,9 @@ public class LogMethodAction extends AbstractLoggingAction {
 	 * @param method   The method
 	 */
 	public void addLoggingToMethod(PsiClass psiClass, PsiMethod method) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("addLoggingToMethod(PsiClass,PsiMethod) - start");
+		}
 		Project proj = psiClass.getProject();
 		PsiCodeBlock body = method.getBody();
 
@@ -68,6 +87,9 @@ public class LogMethodAction extends AbstractLoggingAction {
 		}
 
 		CodeStyleManager.getInstance(method.getProject()).reformat(body);
+		if (logger.isDebugEnabled()) {
+			logger.debug("addLoggingToMethod(PsiClass,PsiMethod) - end");
+		}
 	}
 
 	/**
@@ -78,6 +100,9 @@ public class LogMethodAction extends AbstractLoggingAction {
 	 * @param prepend   True, if the statement should be at the start of the method.  False, otherwise.
 	 */
 	private void addStatement(PsiMethod method, PsiStatement statement, boolean prepend) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("addStatement(PsiMethod,PsiStatement,boolean) - start");
+		}
 		PsiCodeBlock body = method.getBody();
 		if (body != null) {
 			PsiDocumentManager.getInstance(method.getProject()).commitAllDocuments();
@@ -92,6 +117,9 @@ public class LogMethodAction extends AbstractLoggingAction {
 				body.add(statement);
 			}
 		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("addStatement(PsiMethod,PsiStatement,boolean) - end");
+		}
 	}
 
 	/**
@@ -102,6 +130,9 @@ public class LogMethodAction extends AbstractLoggingAction {
 	 * @return The log statement
 	 */
 	private PsiStatement createMethodStartLoggingStatement(Project project, PsiMethod method) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("createMethodStartLoggingStatement(Project,PsiMethod) - start");
+		}
 		String methodDeclaration = getMethodDeclaration(method);
 		String startDeclaration = methodDeclaration + logStatementStart;
 		String startMethodStatementStr = guardedLogStatementTemplate.formatted(loggerObjectName, loggerObjectName, startDeclaration);
@@ -109,6 +140,9 @@ public class LogMethodAction extends AbstractLoggingAction {
 
 		PsiStatement methodStartStatement = this.createExpressionStatement(method.getContainingClass(), startMethodStatementStr);
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("createMethodStartLoggingStatement(Project,PsiMethod) - end");
+		}
 		return methodStartStatement;
 	}
 
@@ -120,6 +154,9 @@ public class LogMethodAction extends AbstractLoggingAction {
 	 * @return The log statement
 	 */
 	private PsiStatement createMethodEndLoggingStatement(Project project, PsiMethod method) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("createMethodEndLoggingStatement(Project,PsiMethod) - start");
+		}
 		String methodDeclaration = getMethodDeclaration(method);
 		String endDeclaration = methodDeclaration + logStatementEnd;
 		String endMethodStatementStr = guardedLogStatementTemplate.formatted(loggerObjectName, loggerObjectName, endDeclaration);
@@ -127,6 +164,9 @@ public class LogMethodAction extends AbstractLoggingAction {
 
 		PsiStatement methodEndStatement = this.createExpressionStatement(method.getContainingClass(), endMethodStatementStr);
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("createMethodEndLoggingStatement(Project,PsiMethod) - end");
+		}
 		return methodEndStatement;
 	}
 
@@ -136,6 +176,9 @@ public class LogMethodAction extends AbstractLoggingAction {
 	 * @return The status
 	 */
 	private boolean hasExistingStatement(PsiCodeBlock body, PsiStatement statement, boolean prepend) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("hasExistingStatement(PsiCodeBlock,PsiStatement,boolean) - start");
+		}
 		System.out.println("CHECKING FOR STATEMENT");
 		String statementText = statement.getText().replaceAll("\\s+", "");
 		System.out.println("statementText=" + statementText);
@@ -160,6 +203,10 @@ public class LogMethodAction extends AbstractLoggingAction {
 			if (existingStatement.getText().equals(statement.getText())) {
 				return true;
 			}
+		}
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("hasExistingStatement(PsiCodeBlock,PsiStatement,boolean) - end");
 		}
 		return false;
 	}

@@ -10,6 +10,8 @@ import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 import net.odyssi.log4jb.dialogs.GenericLogFormDialog;
 import net.odyssi.log4jb.forms.GenericLogModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -24,9 +26,13 @@ import java.util.stream.Collectors;
 public class GenericLogAction extends AbstractLoggingAction {
 
 	private static final String baseTemplate = "if(%s.is%sEnabled()) {\n	%s.%s(\"%s %s%s\"%s);\n}\n";
+	private static final Logger logger = LoggerFactory.getLogger(GenericLogAction.class);
 
 	@Override
 	public void actionPerformed(AnActionEvent e) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("actionPerformed(AnActionEvent) - start");
+		}
 		Project proj = e.getProject();
 		Editor editor = e.getData(CommonDataKeys.EDITOR);
 
@@ -41,6 +47,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 				this.applyLogStatements(logModel, proj, editor);
 			});
 		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("actionPerformed(AnActionEvent) - end");
+		}
 	}
 
 	/**
@@ -51,6 +60,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 	 * @param editor   The editor
 	 */
 	protected void applyLogStatements(GenericLogModel logModel, Project project, Editor editor) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("applyLogStatements(GenericLogModel,Project,Editor) - start");
+		}
 		String logStatementStr = this.buildLogStatement(logModel, project, editor);
 
 		PsiMethod selectedMethod = getSelectedCursorMethod(project, editor);
@@ -81,6 +93,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 			// Handle the case where the anchor element is null
 			file.add(logStatement);
 		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("applyLogStatements(GenericLogModel,Project,Editor) - end");
+		}
 	}
 
 	/**
@@ -91,6 +106,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 	 * @return The log statement
 	 */
 	protected String buildLogStatement(GenericLogModel logModel, Project project, Editor editor) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("buildLogStatement(GenericLogModel,Project,Editor) - start");
+		}
 		PsiMethod selectedMethod = getSelectedCursorMethod(project, editor);
 		String methodDeclaration = getMethodDeclaration(selectedMethod);
 		String logLevelOperation = getLogLevelOperation(logModel.getLogLevel());
@@ -101,6 +119,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 		String logStatementStr = baseTemplate.formatted(loggerObjectName, capitalizeFirstLetter(logLevelOperation), loggerObjectName, logLevelOperation, methodDeclaration, logMessage, variableLogStatement, variableLogValues);
 		System.out.println("logStatementStr=" + logStatementStr);
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("buildLogStatement(GenericLogModel,Project,Editor) - end");
+		}
 		return logStatementStr;
 	}
 
@@ -112,8 +133,11 @@ public class GenericLogAction extends AbstractLoggingAction {
 	 * @return The log statement
 	 */
 	protected String getVariableLogStatement(Set<String> globalVariables, Set<String> localVariables, Set<String> methodParameters) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("getVariableLogStatement(Set<String>,Set<String>,Set<String>) - start");
+		}
 		String s = null;
-		if(globalVariables.size() == 0 && localVariables.size() == 0 && methodParameters.size() == 0) {
+		if (globalVariables.size() == 0 && localVariables.size() == 0 && methodParameters.size() == 0) {
 			s = "";
 		} else {
 			Set<String> combinedVariables = new LinkedHashSet<>();
@@ -124,6 +148,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 			s = " - " + combinedVariables.stream().collect(Collectors.joining("={}, ")) + "={}";
 		}
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("getVariableLogStatement(Set<String>,Set<String>,Set<String>) - end");
+		}
 		return s;
 	}
 
@@ -135,6 +162,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 	 * @return The log statement
 	 */
 	protected String getVariableLogValuesStatement(Set<String> globalVariables, Set<String> localVariables, Set<String> methodParameters) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("getVariableLogValuesStatement(Set<String>,Set<String>,Set<String>) - start");
+		}
 		String s = null;
 		if (globalVariables.size() == 0 && localVariables.size() == 0 && methodParameters.size() == 0) {
 			s = "";
@@ -147,6 +177,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 			s = ", " + combinedVariables.stream().collect(Collectors.joining(", "));
 		}
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("getVariableLogValuesStatement(Set<String>,Set<String>,Set<String>) - end");
+		}
 		return s;
 	}
 
@@ -157,6 +190,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 	 * @return The operation
 	 */
 	protected String getLogLevelOperation(String logLevel) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("getLogLevelOperation(String) - start");
+		}
 		String s = null;
 		switch (logLevel) {
 			case "DEBUG":
@@ -172,12 +208,22 @@ public class GenericLogAction extends AbstractLoggingAction {
 				break;
 		}
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("getLogLevelOperation(String) - end");
+		}
 		return s;
 	}
 
 	private String capitalizeFirstLetter(String str) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("capitalizeFirstLetter(String) - start");
+		}
 		if (str == null || str.isEmpty()) {
 			return str;
+		}
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("capitalizeFirstLetter(String) - end");
 		}
 		return str.substring(0, 1).toUpperCase() + str.substring(1);
 	}
@@ -189,6 +235,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 	 * @return The method parameters
 	 */
 	protected Set<String[]> getMethodParameters(Editor editor) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("getMethodParameters(Editor) - start");
+		}
 		Caret caret = editor.getCaretModel().getPrimaryCaret();
 
 		// Get the current project
@@ -222,6 +271,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 			return parameterInfo;
 		}
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("getMethodParameters(Editor) - end");
+		}
 		// If no parent PsiMethod element is found, return an empty set
 		return new HashSet<>();
 	}
@@ -234,6 +286,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 	 */
 	protected Set<String[]> getClassVariables(Editor editor) {
 		// Get the current caret
+		if (logger.isDebugEnabled()) {
+			logger.debug("getClassVariables(Editor) - start");
+		}
 		Caret caret = editor.getCaretModel().getPrimaryCaret();
 
 		// Get the current project
@@ -266,6 +321,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 			return fieldInfo;
 		}
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("getClassVariables(Editor) - end");
+		}
 		// If no parent PsiClass element is found, return an empty set
 		return new HashSet<>();
 	}
@@ -278,6 +336,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 	 */
 	protected Set<String[]> getLocalVariables(Editor editor) {
 		// Get the current caret
+		if (logger.isDebugEnabled()) {
+			logger.debug("getLocalVariables(Editor) - start");
+		}
 		Caret caret = editor.getCaretModel().getPrimaryCaret();
 
 		// Get the current project
@@ -317,6 +378,9 @@ public class GenericLogAction extends AbstractLoggingAction {
 			return variableInfo;
 		}
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("getLocalVariables(Editor) - end");
+		}
 		// If no parent PsiMethod element is found, return an empty set
 		return new HashSet<>();
 	}
