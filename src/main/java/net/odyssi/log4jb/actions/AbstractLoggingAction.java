@@ -9,6 +9,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +33,7 @@ public abstract class AbstractLoggingAction extends AnAction {
 
 	private static final String loggerValueTemplate = "LoggerFactory.getLogger(%s.class);";
 	private static final String logStatementMethodName = "%s(%s)";
+	private static final Logger logger = LoggerFactory.getLogger(AbstractLoggingAction.class);
 
 	/**
 	 * Adds import statements to the given {@link PsiClass}.  This method should only be called within a {@link WriteCommandAction}
@@ -39,6 +42,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @param classNames The import class names
 	 */
 	public void addImportStatements(PsiClass psiClass, String... classNames) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("addImportStatements(PsiClass,String...) - start");
+		}
 		System.out.println("ADDING IMPORTS - psiClass=" + psiClass + ", classNames=" + Arrays.toString(classNames));
 		Project proj = psiClass.getProject();
 
@@ -53,6 +59,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 				((PsiJavaFile) psiClass.getContainingFile()).getImportList().add(importStatement);
 			}
 		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("addImportStatements(PsiClass,String...) - end");
+		}
 	}
 
 	/**
@@ -62,9 +71,15 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @return The status
 	 */
 	public boolean isLoggerDeclared(PsiClass psiClass) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("isLoggerDeclared(PsiClass) - start");
+		}
 		PsiField field = findExistingField(psiClass, loggerObjectName);
 		boolean status = (field != null);
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("isLoggerDeclared(PsiClass) - end");
+		}
 		return status;
 	}
 
@@ -74,6 +89,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @param psiClass The PSI class
 	 */
 	public void declareLogger(PsiClass psiClass) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("declareLogger(PsiClass) - start");
+		}
 		if (psiClass == null) {
 		} else {
 			if (isLoggerDeclared(psiClass)) {
@@ -92,6 +110,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 				});
 			}
 		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("declareLogger(PsiClass) - end");
+		}
 	}
 
 	/**
@@ -102,10 +123,17 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @return The PSI field
 	 */
 	private PsiField findExistingField(PsiClass psiClass, String fieldName) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("findExistingField(PsiClass,String) - start");
+		}
 		for (PsiField field : psiClass.getFields()) {
 			if (field.getName().equals(fieldName)) {
 				return field;
 			}
+		}
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("findExistingField(PsiClass,String) - end");
 		}
 		return null;
 	}
@@ -117,11 +145,17 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @return The status
 	 */
 	public boolean isJavaClassSelected(AnActionEvent e) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("isJavaClassSelected(AnActionEvent) - start");
+		}
 		Project proj = e.getProject();
 		Editor editor = e.getRequiredData(CommonDataKeys.EDITOR);
 
 		boolean status = getSelectedCursorClass(proj, editor) != null;
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("isJavaClassSelected(AnActionEvent) - end");
+		}
 		return status;
 	}
 
@@ -133,6 +167,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @return The selected method, if applicable
 	 */
 	public PsiMethod getSelectedCursorMethod(Project project, Editor editor) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("getSelectedCursorMethod(Project,Editor) - start");
+		}
 		PsiFile file = PsiManager.getInstance(project).findFile(editor.getVirtualFile());
 
 		if (file == null) {
@@ -154,6 +191,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 			}
 		}
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("getSelectedCursorMethod(Project,Editor) - end");
+		}
 		return null;
 	}
 
@@ -165,6 +205,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @return The selected class, if applicable
 	 */
 	public PsiClass getSelectedCursorClass(Project project, Editor editor) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("getSelectedCursorClass(Project,Editor) - start");
+		}
 		PsiFile file = PsiManager.getInstance(project).findFile(editor.getVirtualFile());
 
 		if (file == null) {
@@ -186,6 +229,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 			}
 		}
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("getSelectedCursorClass(Project,Editor) - end");
+		}
 		return null;
 	}
 
@@ -197,6 +243,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @return The selected variable, if applicable
 	 */
 	public PsiLocalVariable getSelectedCursorLocalVariable(Project project, Editor editor) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("getSelectedCursorLocalVariable(Project,Editor) - start");
+		}
 		PsiMethod selectedMethod = getSelectedCursorMethod(project, editor);
 		PsiFile file = selectedMethod.getContainingFile();
 
@@ -219,10 +268,10 @@ public abstract class AbstractLoggingAction extends AnAction {
 				PsiElement parent = identifier.getParent();
 				if (parent instanceof PsiLocalVariable) {
 					return (PsiLocalVariable) parent;
-				} else if(parent instanceof PsiReferenceExpression) {
+				} else if (parent instanceof PsiReferenceExpression) {
 					PsiReferenceExpression refExpr = (PsiReferenceExpression) parent;
 					PsiElement resolvedElement = refExpr.resolve();
-					if(resolvedElement instanceof PsiLocalVariable) {
+					if (resolvedElement instanceof PsiLocalVariable) {
 						PsiLocalVariable variable = (PsiLocalVariable) resolvedElement;
 						return variable;
 					}
@@ -230,10 +279,16 @@ public abstract class AbstractLoggingAction extends AnAction {
 			}
 		}
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("getSelectedCursorLocalVariable(Project,Editor) - end");
+		}
 		return null;
 	}
 
 	private PsiIdentifier findIdentifier(PsiElement element) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("findIdentifier(PsiElement) - start");
+		}
 		if (element instanceof PsiIdentifier) {
 			return (PsiIdentifier) element;
 		}
@@ -242,6 +297,10 @@ public abstract class AbstractLoggingAction extends AnAction {
 			if (identifier != null) {
 				return identifier;
 			}
+		}
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("findIdentifier(PsiElement) - end");
 		}
 		return null;
 	}
@@ -253,11 +312,17 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @return The status
 	 */
 	public boolean isJavaMethodSelected(AnActionEvent e) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("isJavaMethodSelected(AnActionEvent) - start");
+		}
 		Project proj = e.getProject();
 		Editor editor = e.getRequiredData(CommonDataKeys.EDITOR);
 
 		boolean status = getSelectedCursorMethod(proj, editor) != null;
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("isJavaMethodSelected(AnActionEvent) - end");
+		}
 		return status;
 	}
 
@@ -268,11 +333,17 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @return The status
 	 */
 	public boolean isJavaLocalVariableSelected(AnActionEvent e) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("isJavaLocalVariableSelected(AnActionEvent) - start");
+		}
 		Project proj = e.getProject();
 		Editor editor = e.getRequiredData(CommonDataKeys.EDITOR);
 
 		boolean status = getSelectedCursorLocalVariable(proj, editor) != null;
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("isJavaLocalVariableSelected(AnActionEvent) - end");
+		}
 		return status;
 	}
 
@@ -284,9 +355,15 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @return The statement
 	 */
 	public PsiStatement createExpressionStatement(PsiClass psiClass, String statementText) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("createExpressionStatement(PsiClass,String) - start");
+		}
 		PsiElementFactory factory = JavaPsiFacade.getElementFactory(psiClass.getProject());
 		PsiStatement statement = factory.createStatementFromText(statementText, null);
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("createExpressionStatement(PsiClass,String) - end");
+		}
 		return statement;
 	}
 
@@ -297,11 +374,18 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @return The method declaration
 	 */
 	protected String getMethodDeclaration(PsiMethod method) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("getMethodDeclaration(PsiMethod) - start");
+		}
 		String methodName = method.getName();
 		List<String> methodParams = getMethodParameterTypes(method);
 		String methodParamsStr = String.join(",", methodParams);
 
 		String methodDeclaration = logStatementMethodName.formatted(methodName, methodParamsStr);
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("getMethodDeclaration(PsiMethod) - end");
+		}
 		return methodDeclaration;
 	}
 
@@ -312,6 +396,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @return The parameter types
 	 */
 	private List<String> getMethodParameterTypes(PsiMethod method) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("getMethodParameterTypes(PsiMethod) - start");
+		}
 		List<String> paramTypes = new ArrayList<>();
 
 		PsiParameterList params = method.getParameterList();
@@ -324,6 +411,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 			System.out.println("NO PARAMS");
 		}
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("getMethodParameterTypes(PsiMethod) - end");
+		}
 		return paramTypes;
 	}
 }
