@@ -1,0 +1,52 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>net.odyssi.log4jb</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>Log4JB</name>
+    <version>0.1</version>
+    <depends>com.intellij.modules.java</depends>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor url="https://github.com/TheGeekPharaoh/Log4JB">TheGeekPharaoh</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description><![CDATA[
+    Log4JB simplifies the process of adding logging to your JetBrains IntelliJ IDEA projects
+  ]]></description>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+    </extensions>
+
+    <actions>
+        <group id="Log4JBActionGroup" text="Log4JB" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last" />
+
+            <action id="DeclareLoggerAction" class="net.odyssi.log4jb.actions.DeclareLoggerAction"
+                    text="Declare logger" description="Declares a new logger within the selected Class"/>
+            <separator />
+            <action id="LogClassAction" class="net.odyssi.log4jb.actions.LogClassAction" text="Log this class"
+                    description="Generates log statements for all methods in the selected class"/>
+            <action id="LogMethodAction" class="net.odyssi.log4jb.actions.LogMethodAction" text="Log this method"
+                    description="Generates beginning and ending log statements for the selected method"/>
+            <action id="LogVariableAction" class="net.odyssi.log4jb.actions.LogVariableAction" text="Log this variable"
+                    description="Generates log statements for the selected variable"/>
+            <separator />
+            <action id="GenericLogAction" class="net.odyssi.log4jb.actions.GenericLogAction" text="Log at this position..."
+                    description="Generates a user-defined log statement at the selected location"/>
+            <separator />
+        </group>
+
+    </actions>
+</idea-plugin>
