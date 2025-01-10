@@ -9,6 +9,7 @@ import com.intellij.psi.codeStyle.CodeStyleManager;
  * A {@link org.intellij.markdown.ast.visitors.Visitor} implementation that can be used to add a logging statement
  * to the beginning of the selected method
  */
+// TODO Add check for existing log statements
 public class MethodStartStatementVisitor extends JavaRecursiveElementVisitor {
 
 	private final PsiMethod method;
@@ -19,6 +20,10 @@ public class MethodStartStatementVisitor extends JavaRecursiveElementVisitor {
 
 	@Override
 	public void visitMethod(PsiMethod method) {
+		if(method.isConstructor()) {
+			return;
+		}
+
 		super.visitMethod(method);
 		if (method.getBody() != null) {
 			PsiStatement logStatement = buildLogStatement();

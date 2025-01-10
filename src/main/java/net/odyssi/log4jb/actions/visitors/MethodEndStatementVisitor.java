@@ -9,12 +9,22 @@ import org.jetbrains.annotations.NotNull;
  * A {@link org.intellij.markdown.ast.visitors.Visitor} implementation that adds a logging statement before each return
  * statement in a method
  */
+// TODO Add check for existing log statements
 public class MethodEndStatementVisitor extends JavaRecursiveElementVisitor {
 
 	private final PsiMethod method;
 
 	public MethodEndStatementVisitor(PsiMethod method) {
 		this.method = method;
+	}
+
+	@Override
+	public void visitMethod(@NotNull PsiMethod method) {
+		if(method.isConstructor()) {
+			return;
+		}
+
+		super.visitMethod(method);
 	}
 
 	@Override
