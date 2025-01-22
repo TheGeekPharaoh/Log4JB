@@ -62,6 +62,9 @@
             <action id="GenericLogAction" class="net.odyssi.log4jb.actions.GenericLogAction" text="Log at this position..."
                     description="Generates a user-defined log statement at the selected location"/>
             <separator />
+            <action id="SystemOutReplacementAction" class="net.odyssi.log4jb.actions.SystemOutReplacementAction" text="Replace System.out.println()"
+                    description="Replaces calls to System.out.println() with the configured logger" />
+            <separator />
         </group>
 
     </actions>

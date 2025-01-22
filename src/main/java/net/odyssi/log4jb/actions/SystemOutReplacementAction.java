@@ -1,0 +1,53 @@
+package net.odyssi.log4jb.actions;
+
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.project.Project;
+import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.PsiElementFactory;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.codeStyle.CodeStyleManager;
+import net.odyssi.log4jb.actions.visitors.SystemOutReplacementVisitor;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * The Action used to replace calls to System.out.println with logging statements
+ */
+public class SystemOutReplacementAction extends AbstractLoggingAction {
+
+
+	@Override
+	public void actionPerformed(@NotNull AnActionEvent e) {
+		Project project = e.getProject();
+		Editor editor = e.getRequiredData(CommonDataKeys.EDITOR);
+		PsiFile psiFile = e.getRequiredData(CommonDataKeys.PSI_FILE);
+
+		Document document = editor.getDocument();
+		PsiDocumentManager.getInstance(project).doPostponedOperationsAndUnblockDocument(document);
+
+		PsiElementFactory factory = PsiElementFactory.getInstance(project);
+		PsiMethod method = getSelectedCursorMethod(project, editor);
+
+		WriteCommandAction.runWriteCommandAction(project, () -> {
+			SystemOutReplacementVisitor systemOutVisitor = new SystemOutReplacementVisitor(method);
+			psiFile.accept(systemOutVisitor);
+
+			CodeStyleManager.getInstance(project).reformat(psiFile);
+			PsiDocumentManager.getInstance(project).commitDocument(document);
+		});
+	}
+
+
+	@Override
+	public void update(@NotNull AnActionEvent e) {
+		// Check if a Java class is selected
+		boolean isEnabled = isJavaMethodSelected(e);
+
+		// Enable or disable the action
+		e.getPresentation().setEnabled(isEnabled);
+	}
+}
