@@ -9,8 +9,13 @@ import com.intellij.psi.codeStyle.CodeStyleManager;
  * A {@link org.intellij.markdown.ast.visitors.Visitor} implementation that can be used to add a logging statement
  * to the beginning of the selected method
  */
-// TODO Add check for existing log statements
 public class MethodStartStatementVisitor extends AbstractMethodLoggingVisitor{
+
+	private static final String guardedLogStatementTemplate = "if(%s.isDebugEnabled()) {\n	%s.debug(\"%s\");\n}";
+
+	private static final String logStatementStart = " - start";
+
+	public static final String loggerObjectName = "logger";
 
 	public MethodStartStatementVisitor(PsiMethod method) {
 		super(method);
@@ -27,8 +32,10 @@ public class MethodStartStatementVisitor extends AbstractMethodLoggingVisitor{
 			PsiStatement logStatement = buildLogStatement();
 			PsiStatement[] statements = method.getBody().getStatements();
 			if (statements.length > 0) {
+				// TODO Add check for existing log statements
 				method.getBody().addBefore(logStatement, statements[0]);
 			} else {
+				// TODO Add check for existing log statements
 				method.getBody().add(logStatement);
 			}
 			CodeStyleManager.getInstance(method.getProject()).reformat(logStatement);
@@ -41,9 +48,14 @@ public class MethodStartStatementVisitor extends AbstractMethodLoggingVisitor{
 	 * @return The log statement
 	 */
 	private PsiStatement buildLogStatement() {
-		// TODO Generate proper log statement
-		PsiStatement logStatement = JavaPsiFacade.getElementFactory(getMethod().getProject()).createStatementFromText("System.out.println(\"Method " + getMethod().getName() + " started\");", getMethod());
-		return logStatement;
+		String methodDeclaration = getMethodDeclaration(getMethod());
+		String startDeclaration = methodDeclaration + logStatementStart;
+		String startMethodStatementStr = guardedLogStatementTemplate.formatted(loggerObjectName, loggerObjectName, startDeclaration);
+
+		PsiElementFactory factory = JavaPsiFacade.getElementFactory(getMethod().getProject());
+		PsiStatement statement = factory.createStatementFromText(startMethodStatementStr, null);
+
+		return statement;
 	}
 
 }
