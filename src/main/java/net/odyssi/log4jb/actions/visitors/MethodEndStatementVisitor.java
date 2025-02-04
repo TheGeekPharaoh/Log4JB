@@ -2,8 +2,6 @@ package net.odyssi.log4jb.actions.visitors;
 
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
-import org.apache.commons.lang.ArrayUtils;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * A {@link org.intellij.markdown.ast.visitors.Visitor} implementation that adds a logging statement before each return
@@ -12,56 +10,59 @@ import org.jetbrains.annotations.NotNull;
 // TODO Add check for existing log statements
 public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 
+	private static final String guardedLogStatementTemplate = "if(%s.isDebugEnabled()) {\n	%s.debug(\"%s\");\n}";
+
+	private static final String logStatementEnd = " - end";
+
+	public static final String loggerObjectName = "logger";
+
+	private boolean hasReturnStatement = false;
+
 	public MethodEndStatementVisitor(PsiMethod method) {
 		super(method);
 	}
 
 	@Override
-	public void visitMethod(@NotNull PsiMethod method) {
-		if(method.isConstructor()) {
-			return;
-		}
-
-		super.visitMethod(method);
+	public void visitReturnStatement(PsiReturnStatement element) {
+		super.visitReturnStatement(element);
+		hasReturnStatement = true;
+		insertStatementBefore(element);
 	}
 
 	@Override
-	public void visitReturnStatement(PsiReturnStatement returnStatement) {
-		super.visitReturnStatement(returnStatement);
-		this.addMethodReturnLoggingStatement(returnStatement);
-	}
-
-	@Override
-	public void visitCodeBlock(@NotNull PsiCodeBlock block) {
+	public void visitCodeBlock(PsiCodeBlock block) {
 		super.visitCodeBlock(block);
-		if (block.getStatements().length == 0 || !(block.getStatements()[block.getStatements().length - 1] instanceof PsiReturnStatement)) {
-			addMethodEndLoggingStatement(block);
+		if (!hasReturnStatement && block == getMethod().getBody()) {
+			insertStatementAtEnd(block);
 		}
 	}
 
-	private PsiStatement buildLogStatement() {
-		// TODO Generate proper log statement
-		PsiStatement logStatement = JavaPsiFacade.getElementFactory(getMethod().getProject()).createStatementFromText("System.out.println(\"Method " + getMethod().getName() + " returned\");", getMethod());
-		return logStatement;
+	private void insertStatementBefore(PsiReturnStatement element) {
+		PsiStatement newStatement = buildLogStatement();
+		element.getParent().addBefore(newStatement, element);
+		CodeStyleManager.getInstance(getMethod().getProject()).reformat(newStatement);
+	}
+
+	private void insertStatementAtEnd(PsiCodeBlock block) {
+		PsiStatement statement = buildLogStatement();
+		block.add(statement);
+		CodeStyleManager.getInstance(getMethod().getProject()).reformat(statement);
 	}
 
 	/**
-	 * Adds the method end logging statement immediately before a return statement
+	 * Builds the log statement for the start of the selected method
 	 *
-	 * @param returnStatement The return statement
+	 * @return The log statement
 	 */
-	private void addMethodReturnLoggingStatement(PsiReturnStatement returnStatement) {
-		PsiStatement logStatement = buildLogStatement();
-		PsiCodeBlock codeBlock = (PsiCodeBlock) returnStatement.getParent();
+	private PsiStatement buildLogStatement() {
+		String methodDeclaration = getMethodDeclaration(getMethod());
+		String startDeclaration = methodDeclaration + logStatementEnd;
+		String startMethodStatementStr = guardedLogStatementTemplate.formatted(loggerObjectName, loggerObjectName, startDeclaration);
 
-		int index = ArrayUtils.indexOf(codeBlock.getStatements(), returnStatement);
-		codeBlock.addBefore(logStatement, codeBlock.getStatements()[index]);
-		CodeStyleManager.getInstance(getMethod().getProject()).reformat(logStatement);
+		PsiElementFactory factory = JavaPsiFacade.getElementFactory(getMethod().getProject());
+		PsiStatement statement = factory.createStatementFromText(startMethodStatementStr, null);
+
+		return statement;
 	}
 
-	private void addMethodEndLoggingStatement(PsiCodeBlock block) {
-		PsiStatement logStatement = this.buildLogStatement();
-		block.add(logStatement);
-		CodeStyleManager.getInstance(getMethod().getProject()).reformat(logStatement);
-	}
 }
