@@ -5,8 +5,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiMethod;
+import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,15 +47,19 @@ public class LogClassAction extends LogMethodAction {
 		Project proj = e.getProject();
 		Editor editor = e.getRequiredData(CommonDataKeys.EDITOR);
 		PsiClass selectedClass = getSelectedCursorClass(proj, editor);
+		PsiFile psiFile = PsiDocumentManager.getInstance(proj).getPsiFile(editor.getDocument());
 
-		List<PsiMethod> methods = Arrays.asList(selectedClass.getMethods());
-		WriteCommandAction.runWriteCommandAction(proj, () -> {
-			declareLogger(selectedClass);
+		if (psiFile instanceof PsiJavaFile) {
 
-			methods.forEach(m -> {
-				this.addLoggingToMethod(selectedClass, m);
+			List<PsiMethod> methods = Arrays.asList(selectedClass.getMethods());
+			WriteCommandAction.runWriteCommandAction(proj, () -> {
+				declareLogger(selectedClass);
+
+				methods.forEach(m -> {
+					this.addLoggingToMethod((PsiJavaFile) psiFile, selectedClass, m);
+				});
 			});
-		});
+		}
 
 		if (logger.isDebugEnabled()) {
 			logger.debug("actionPerformed(AnActionEvent) - end");
