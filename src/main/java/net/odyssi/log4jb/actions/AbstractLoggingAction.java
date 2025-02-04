@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
+import net.odyssi.log4jb.actions.visitors.LoggerImportVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,28 +43,28 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 * @param psiClass   The class
 	 * @param classNames The import class names
 	 */
-	public void addImportStatements(PsiClass psiClass, String... classNames) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("addImportStatements(PsiClass,String...) - start");
-		}
-		System.out.println("ADDING IMPORTS - psiClass=" + psiClass + ", classNames=" + Arrays.toString(classNames));
-		Project proj = psiClass.getProject();
-
-		PsiElementFactory factory = JavaPsiFacade.getInstance(proj).getElementFactory();
-		PsiJavaFile javaFile = (PsiJavaFile) psiClass.getContainingFile();
-		for (String className : classNames) {
-			PsiClass importClass = JavaPsiFacade.getInstance(proj).findClass(className, GlobalSearchScope.allScope(proj));
-			if (importClass == null) {
-			} else {
-				System.out.println("Adding import " + className + "...");
-				PsiImportStatement importStatement = JavaPsiFacade.getElementFactory(proj).createImportStatement(importClass);
-				((PsiJavaFile) psiClass.getContainingFile()).getImportList().add(importStatement);
-			}
-		}
-		if (logger.isDebugEnabled()) {
-			logger.debug("addImportStatements(PsiClass,String...) - end");
-		}
-	}
+//	public void addImportStatements(PsiClass psiClass, String... classNames) {
+//		if (logger.isDebugEnabled()) {
+//			logger.debug("addImportStatements(PsiClass,String...) - start");
+//		}
+//		System.out.println("ADDING IMPORTS - psiClass=" + psiClass + ", classNames=" + Arrays.toString(classNames));
+//		Project proj = psiClass.getProject();
+//
+//		PsiElementFactory factory = JavaPsiFacade.getInstance(proj).getElementFactory();
+//		PsiJavaFile javaFile = (PsiJavaFile) psiClass.getContainingFile();
+//		for (String className : classNames) {
+//			PsiClass importClass = JavaPsiFacade.getInstance(proj).findClass(className, GlobalSearchScope.allScope(proj));
+//			if (importClass == null) {
+//			} else {
+//				System.out.println("Adding import " + className + "...");
+//				PsiImportStatement importStatement = JavaPsiFacade.getElementFactory(proj).createImportStatement(importClass);
+//				((PsiJavaFile) psiClass.getContainingFile()).getImportList().add(importStatement);
+//			}
+//		}
+//		if (logger.isDebugEnabled()) {
+//			logger.debug("addImportStatements(PsiClass,String...) - end");
+//		}
+//	}
 
 	/**
 	 * Returns true if a logger is already declared for the given {@link PsiClass}
@@ -104,7 +105,8 @@ public abstract class AbstractLoggingAction extends AnAction {
 				System.out.println("loggerSignature=" + loggerSignature);
 
 				WriteCommandAction.runWriteCommandAction(proj, () -> {
-					addImportStatements(psiClass, classImports);
+//					LoggerImportVisitor importVisitor = new LoggerImportVisitor((PsiJavaFile) psiClass.getContainingFile(), loggerSignature);
+//					addImportStatements(psiClass, classImports);
 					PsiField loggerField = factory.createFieldFromText(loggerSignature, psiClass);
 
 					psiClass.add(loggerField);
