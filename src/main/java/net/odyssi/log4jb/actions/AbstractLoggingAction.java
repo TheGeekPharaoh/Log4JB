@@ -31,7 +31,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 	public static final String loggerClassName = "Logger";
 
 	private static final String loggerValueTemplate = "LoggerFactory.getLogger(%s.class);";
+
 	private static final String logStatementMethodName = "%s(%s)";
+
 	private static final Logger logger = LoggerFactory.getLogger(AbstractLoggingAction.class);
 
 	/**
