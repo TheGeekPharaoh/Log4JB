@@ -9,6 +9,7 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
+import net.odyssi.log4jb.actions.visitors.LoggerDeclarationVisitor;
 import net.odyssi.log4jb.actions.visitors.LoggerImportVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -51,7 +52,9 @@ public class DeclareLoggerAction extends AbstractLoggingAction {
 				WriteCommandAction.runWriteCommandAction(project, () -> {
 					PsiJavaFile javaFile = (PsiJavaFile) psiFile;
 					LoggerImportVisitor importVisitor = new LoggerImportVisitor((PsiJavaFile) psiClass.getContainingFile(), Arrays.asList(classImports));
+					LoggerDeclarationVisitor declarationVisitor = new LoggerDeclarationVisitor(psiClass);
 
+					psiClass.accept(declarationVisitor);
 					javaFile.accept(importVisitor);
 				});
 			}
