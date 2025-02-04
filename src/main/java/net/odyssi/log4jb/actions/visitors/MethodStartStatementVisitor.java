@@ -10,12 +10,10 @@ import com.intellij.psi.codeStyle.CodeStyleManager;
  * to the beginning of the selected method
  */
 // TODO Add check for existing log statements
-public class MethodStartStatementVisitor extends JavaRecursiveElementVisitor {
-
-	private final PsiMethod method;
+public class MethodStartStatementVisitor extends AbstractMethodLoggingVisitor{
 
 	public MethodStartStatementVisitor(PsiMethod method) {
-		this.method = method;
+		super(method);
 	}
 
 	@Override
@@ -37,9 +35,14 @@ public class MethodStartStatementVisitor extends JavaRecursiveElementVisitor {
 		}
 	}
 
+	/**
+	 * Builds the log statement for the start of the selected method
+	 *
+	 * @return The log statement
+	 */
 	private PsiStatement buildLogStatement() {
 		// TODO Generate proper log statement
-		PsiStatement logStatement = JavaPsiFacade.getElementFactory(method.getProject()).createStatementFromText("System.out.println(\"Method " + method.getName() + " started\");", method);
+		PsiStatement logStatement = JavaPsiFacade.getElementFactory(getMethod().getProject()).createStatementFromText("System.out.println(\"Method " + getMethod().getName() + " started\");", getMethod());
 		return logStatement;
 	}
 

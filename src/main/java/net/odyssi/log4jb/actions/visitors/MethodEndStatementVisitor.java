@@ -10,12 +10,10 @@ import org.jetbrains.annotations.NotNull;
  * statement in a method
  */
 // TODO Add check for existing log statements
-public class MethodEndStatementVisitor extends JavaRecursiveElementVisitor {
-
-	private final PsiMethod method;
+public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 
 	public MethodEndStatementVisitor(PsiMethod method) {
-		this.method = method;
+		super(method);
 	}
 
 	@Override
@@ -43,7 +41,7 @@ public class MethodEndStatementVisitor extends JavaRecursiveElementVisitor {
 
 	private PsiStatement buildLogStatement() {
 		// TODO Generate proper log statement
-		PsiStatement logStatement = JavaPsiFacade.getElementFactory(method.getProject()).createStatementFromText("System.out.println(\"Method " + method.getName() + " returned\");", method);
+		PsiStatement logStatement = JavaPsiFacade.getElementFactory(getMethod().getProject()).createStatementFromText("System.out.println(\"Method " + getMethod().getName() + " returned\");", getMethod());
 		return logStatement;
 	}
 
@@ -58,12 +56,12 @@ public class MethodEndStatementVisitor extends JavaRecursiveElementVisitor {
 
 		int index = ArrayUtils.indexOf(codeBlock.getStatements(), returnStatement);
 		codeBlock.addBefore(logStatement, codeBlock.getStatements()[index]);
-		CodeStyleManager.getInstance(method.getProject()).reformat(logStatement);
+		CodeStyleManager.getInstance(getMethod().getProject()).reformat(logStatement);
 	}
 
 	private void addMethodEndLoggingStatement(PsiCodeBlock block) {
 		PsiStatement logStatement = this.buildLogStatement();
 		block.add(logStatement);
-		CodeStyleManager.getInstance(method.getProject()).reformat(logStatement);
+		CodeStyleManager.getInstance(getMethod().getProject()).reformat(logStatement);
 	}
 }
