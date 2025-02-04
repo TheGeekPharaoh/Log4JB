@@ -1,7 +1,5 @@
 package net.odyssi.log4jb.actions.visitors;
 
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 
