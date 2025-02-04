@@ -8,7 +8,6 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.util.PsiTreeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -255,8 +254,7 @@ public abstract class AbstractLoggingAction extends AnAction {
 			return null;
 		}
 
-		if (element instanceof PsiIdentifier) {
-			PsiIdentifier identifier = (PsiIdentifier) element;
+		if (element instanceof PsiIdentifier identifier) {
 			PsiReference reference = identifier.getReference();
 			if (reference != null) {
 				PsiElement declaration = reference.resolve();
@@ -268,11 +266,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 				PsiElement parent = identifier.getParent();
 				if (parent instanceof PsiLocalVariable) {
 					return (PsiLocalVariable) parent;
-				} else if (parent instanceof PsiReferenceExpression) {
-					PsiReferenceExpression refExpr = (PsiReferenceExpression) parent;
+				} else if (parent instanceof PsiReferenceExpression refExpr) {
 					PsiElement resolvedElement = refExpr.resolve();
-					if (resolvedElement instanceof PsiLocalVariable) {
-						PsiLocalVariable variable = (PsiLocalVariable) resolvedElement;
+					if (resolvedElement instanceof PsiLocalVariable variable) {
 						return variable;
 					}
 				}
@@ -315,10 +311,16 @@ public abstract class AbstractLoggingAction extends AnAction {
 		if (logger.isDebugEnabled()) {
 			logger.debug("isJavaMethodSelected(AnActionEvent) - start");
 		}
+
 		Project proj = e.getProject();
 		Editor editor = e.getRequiredData(CommonDataKeys.EDITOR);
 
-		boolean status = getSelectedCursorMethod(proj, editor) != null;
+		boolean status;
+		if (editor == null) {
+			status = false;
+		} else {
+			status = getSelectedCursorMethod(proj, editor) != null;
+		}
 
 		if (logger.isDebugEnabled()) {
 			logger.debug("isJavaMethodSelected(AnActionEvent) - end");
