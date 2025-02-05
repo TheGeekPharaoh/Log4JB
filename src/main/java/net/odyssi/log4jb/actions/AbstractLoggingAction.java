@@ -3,17 +3,13 @@ package net.odyssi.log4jb.actions;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
-import com.intellij.psi.search.GlobalSearchScope;
-import net.odyssi.log4jb.actions.visitors.LoggerImportVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -36,110 +32,6 @@ public abstract class AbstractLoggingAction extends AnAction {
 	private static final String logStatementMethodName = "%s(%s)";
 
 	private static final Logger logger = LoggerFactory.getLogger(AbstractLoggingAction.class);
-
-	/**
-	 * Adds import statements to the given {@link PsiClass}.  This method should only be called within a {@link WriteCommandAction}
-	 *
-	 * @param psiClass   The class
-	 * @param classNames The import class names
-	 */
-//	public void addImportStatements(PsiClass psiClass, String... classNames) {
-//		if (logger.isDebugEnabled()) {
-//			logger.debug("addImportStatements(PsiClass,String...) - start");
-//		}
-//		System.out.println("ADDING IMPORTS - psiClass=" + psiClass + ", classNames=" + Arrays.toString(classNames));
-//		Project proj = psiClass.getProject();
-//
-//		PsiElementFactory factory = JavaPsiFacade.getInstance(proj).getElementFactory();
-//		PsiJavaFile javaFile = (PsiJavaFile) psiClass.getContainingFile();
-//		for (String className : classNames) {
-//			PsiClass importClass = JavaPsiFacade.getInstance(proj).findClass(className, GlobalSearchScope.allScope(proj));
-//			if (importClass == null) {
-//			} else {
-//				System.out.println("Adding import " + className + "...");
-//				PsiImportStatement importStatement = JavaPsiFacade.getElementFactory(proj).createImportStatement(importClass);
-//				((PsiJavaFile) psiClass.getContainingFile()).getImportList().add(importStatement);
-//			}
-//		}
-//		if (logger.isDebugEnabled()) {
-//			logger.debug("addImportStatements(PsiClass,String...) - end");
-//		}
-//	}
-
-	/**
-	 * Returns true if a logger is already declared for the given {@link PsiClass}
-	 *
-	 * @param psiClass The PSI class
-	 * @return The status
-	 */
-	public boolean isLoggerDeclared(PsiClass psiClass) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("isLoggerDeclared(PsiClass) - start");
-		}
-		PsiField field = findExistingField(psiClass, loggerObjectName);
-		boolean status = (field != null);
-
-		if (logger.isDebugEnabled()) {
-			logger.debug("isLoggerDeclared(PsiClass) - end");
-		}
-		return status;
-	}
-
-	/**
-	 * Declares a logger on the given {@link PsiClass}
-	 *
-	 * @param psiClass The PSI class
-	 */
-//	public void declareLogger(PsiClass psiClass) {
-//		if (logger.isDebugEnabled()) {
-//			logger.debug("declareLogger(PsiClass) - start");
-//		}
-//		if (psiClass == null) {
-//		} else {
-//			if (isLoggerDeclared(psiClass)) {
-//			} else {
-//				Project proj = psiClass.getProject();
-//				PsiElementFactory factory = JavaPsiFacade.getElementFactory(psiClass.getProject());
-//
-//				String loggerSignature = loggerVisibility + " " + loggerClassName + " " + loggerObjectName + " = " + loggerValueTemplate.formatted(psiClass.getName());
-//				System.out.println("loggerSignature=" + loggerSignature);
-//
-//				WriteCommandAction.runWriteCommandAction(proj, () -> {
-////					LoggerImportVisitor importVisitor = new LoggerImportVisitor((PsiJavaFile) psiClass.getContainingFile(), loggerSignature);
-////					addImportStatements(psiClass, classImports);
-//					PsiField loggerField = factory.createFieldFromText(loggerSignature, psiClass);
-//
-//					psiClass.add(loggerField);
-//				});
-//			}
-//		}
-//		if (logger.isDebugEnabled()) {
-//			logger.debug("declareLogger(PsiClass) - end");
-//		}
-//	}
-
-	/**
-	 * Returns the {@link PsiField} with the given name, or null if no match is found
-	 *
-	 * @param psiClass  The PSI class
-	 * @param fieldName The field name
-	 * @return The PSI field
-	 */
-	private PsiField findExistingField(PsiClass psiClass, String fieldName) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("findExistingField(PsiClass,String) - start");
-		}
-		for (PsiField field : psiClass.getFields()) {
-			if (field.getName().equals(fieldName)) {
-				return field;
-			}
-		}
-
-		if (logger.isDebugEnabled()) {
-			logger.debug("findExistingField(PsiClass,String) - end");
-		}
-		return null;
-	}
 
 	/**
 	 * Returns true if the selected element is a {@link PsiClass}
@@ -281,26 +173,6 @@ public abstract class AbstractLoggingAction extends AnAction {
 
 		if (logger.isDebugEnabled()) {
 			logger.debug("getSelectedCursorLocalVariable(Project,Editor) - end");
-		}
-		return null;
-	}
-
-	private PsiIdentifier findIdentifier(PsiElement element) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("findIdentifier(PsiElement) - start");
-		}
-		if (element instanceof PsiIdentifier) {
-			return (PsiIdentifier) element;
-		}
-		for (PsiElement child : element.getChildren()) {
-			PsiIdentifier identifier = findIdentifier(child);
-			if (identifier != null) {
-				return identifier;
-			}
-		}
-
-		if (logger.isDebugEnabled()) {
-			logger.debug("findIdentifier(PsiElement) - end");
 		}
 		return null;
 	}
