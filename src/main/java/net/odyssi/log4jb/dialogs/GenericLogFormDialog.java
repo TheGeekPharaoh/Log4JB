@@ -25,11 +25,11 @@ public class GenericLogFormDialog extends DialogWrapper {
 
 	private Set<String[]> methodParameters = null;
 
-	private Set<String> selectedGlobalVariables = new LinkedHashSet<>();
+	private final Set<String> selectedGlobalVariables = new LinkedHashSet<>();
 
-	private Set<String> selectedMethodParameters = new LinkedHashSet<>();
+	private final Set<String> selectedMethodParameters = new LinkedHashSet<>();
 
-	private Set<String> selectedLocalVariables = new LinkedHashSet<>();
+	private final Set<String> selectedLocalVariables = new LinkedHashSet<>();
 
 	public GenericLogFormDialog(@Nullable Project project, Set<String[]> globalVariables, Set<String[]> localVariables, Set<String[]> methodParameters) {
 		super(project);
