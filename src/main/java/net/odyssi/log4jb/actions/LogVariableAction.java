@@ -7,9 +7,13 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
+import net.odyssi.log4jb.actions.visitors.LoggerDeclarationVisitor;
+import net.odyssi.log4jb.actions.visitors.LoggerImportVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 
 /**
  * Generates a log statement for the selected variable
@@ -47,13 +51,22 @@ public class LogVariableAction extends AbstractLoggingAction {
 		PsiMethod selectedMethod = getSelectedCursorMethod(proj, editor);
 		PsiLocalVariable selectedVariable = getSelectedCursorLocalVariable(proj, editor);
 
-		WriteCommandAction.runWriteCommandAction(proj, () -> {
-			declareLogger(selectedClass);
-			this.logVariable(selectedMethod, selectedVariable, editor);
+		PsiFile psiFile = PsiDocumentManager.getInstance(proj).getPsiFile(editor.getDocument());
 
-			PsiCodeBlock body = selectedMethod.getBody();
-			CodeStyleManager.getInstance(proj).reformat(body);
-		});
+		if (psiFile instanceof PsiJavaFile) {
+			WriteCommandAction.runWriteCommandAction(proj, () -> {
+				LoggerImportVisitor importVisitor = new LoggerImportVisitor((PsiJavaFile) selectedClass.getContainingFile(), Arrays.asList(classImports));
+				LoggerDeclarationVisitor declarationVisitor = new LoggerDeclarationVisitor(selectedClass);
+
+				selectedClass.accept(declarationVisitor);
+				psiFile.accept(importVisitor);
+
+				this.logVariable(selectedMethod, selectedVariable, editor);
+
+				PsiCodeBlock body = selectedMethod.getBody();
+				CodeStyleManager.getInstance(proj).reformat(body);
+			});
+		}
 		if (logger.isDebugEnabled()) {
 			logger.debug("actionPerformed(AnActionEvent) - end");
 		}

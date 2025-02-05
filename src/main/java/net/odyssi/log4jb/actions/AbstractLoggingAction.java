@@ -90,33 +90,33 @@ public abstract class AbstractLoggingAction extends AnAction {
 	 *
 	 * @param psiClass The PSI class
 	 */
-	public void declareLogger(PsiClass psiClass) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("declareLogger(PsiClass) - start");
-		}
-		if (psiClass == null) {
-		} else {
-			if (isLoggerDeclared(psiClass)) {
-			} else {
-				Project proj = psiClass.getProject();
-				PsiElementFactory factory = JavaPsiFacade.getElementFactory(psiClass.getProject());
-
-				String loggerSignature = loggerVisibility + " " + loggerClassName + " " + loggerObjectName + " = " + loggerValueTemplate.formatted(psiClass.getName());
-				System.out.println("loggerSignature=" + loggerSignature);
-
-				WriteCommandAction.runWriteCommandAction(proj, () -> {
-//					LoggerImportVisitor importVisitor = new LoggerImportVisitor((PsiJavaFile) psiClass.getContainingFile(), loggerSignature);
-//					addImportStatements(psiClass, classImports);
-					PsiField loggerField = factory.createFieldFromText(loggerSignature, psiClass);
-
-					psiClass.add(loggerField);
-				});
-			}
-		}
-		if (logger.isDebugEnabled()) {
-			logger.debug("declareLogger(PsiClass) - end");
-		}
-	}
+//	public void declareLogger(PsiClass psiClass) {
+//		if (logger.isDebugEnabled()) {
+//			logger.debug("declareLogger(PsiClass) - start");
+//		}
+//		if (psiClass == null) {
+//		} else {
+//			if (isLoggerDeclared(psiClass)) {
+//			} else {
+//				Project proj = psiClass.getProject();
+//				PsiElementFactory factory = JavaPsiFacade.getElementFactory(psiClass.getProject());
+//
+//				String loggerSignature = loggerVisibility + " " + loggerClassName + " " + loggerObjectName + " = " + loggerValueTemplate.formatted(psiClass.getName());
+//				System.out.println("loggerSignature=" + loggerSignature);
+//
+//				WriteCommandAction.runWriteCommandAction(proj, () -> {
+////					LoggerImportVisitor importVisitor = new LoggerImportVisitor((PsiJavaFile) psiClass.getContainingFile(), loggerSignature);
+////					addImportStatements(psiClass, classImports);
+//					PsiField loggerField = factory.createFieldFromText(loggerSignature, psiClass);
+//
+//					psiClass.add(loggerField);
+//				});
+//			}
+//		}
+//		if (logger.isDebugEnabled()) {
+//			logger.debug("declareLogger(PsiClass) - end");
+//		}
+//	}
 
 	/**
 	 * Returns the {@link PsiField} with the given name, or null if no match is found

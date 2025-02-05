@@ -6,13 +6,14 @@ import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiDocumentManager;
-import com.intellij.psi.PsiElementFactory;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiMethod;
+import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
+import net.odyssi.log4jb.actions.visitors.LoggerDeclarationVisitor;
+import net.odyssi.log4jb.actions.visitors.LoggerImportVisitor;
 import net.odyssi.log4jb.actions.visitors.SystemOutReplacementVisitor;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Arrays;
 
 /**
  * The Action used to replace calls to System.out.println with logging statements
@@ -28,12 +29,18 @@ public class SystemOutReplacementAction extends AbstractLoggingAction {
 
 		Document document = editor.getDocument();
 		PsiDocumentManager.getInstance(project).doPostponedOperationsAndUnblockDocument(document);
+		PsiClass selectedClass = getSelectedCursorClass(project, editor);
 
 		PsiElementFactory factory = PsiElementFactory.getInstance(project);
 		PsiMethod method = getSelectedCursorMethod(project, editor);
 
 		WriteCommandAction.runWriteCommandAction(project, () -> {
+			LoggerImportVisitor importVisitor = new LoggerImportVisitor((PsiJavaFile) selectedClass.getContainingFile(), Arrays.asList(classImports));
+			LoggerDeclarationVisitor declarationVisitor = new LoggerDeclarationVisitor(selectedClass);
 			SystemOutReplacementVisitor systemOutVisitor = new SystemOutReplacementVisitor(method);
+
+			selectedClass.accept(declarationVisitor);
+			psiFile.accept(importVisitor);
 			psiFile.accept(systemOutVisitor);
 
 			CodeStyleManager.getInstance(project).reformat(psiFile);

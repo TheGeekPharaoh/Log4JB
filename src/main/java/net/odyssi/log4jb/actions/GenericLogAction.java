@@ -8,11 +8,14 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
+import net.odyssi.log4jb.actions.visitors.LoggerDeclarationVisitor;
+import net.odyssi.log4jb.actions.visitors.LoggerImportVisitor;
 import net.odyssi.log4jb.dialogs.GenericLogFormDialog;
 import net.odyssi.log4jb.forms.GenericLogModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -35,15 +38,20 @@ public class GenericLogAction extends AbstractLoggingAction {
 		}
 		Project proj = e.getProject();
 		Editor editor = e.getData(CommonDataKeys.EDITOR);
+		PsiClass selectedClass = getSelectedCursorClass(proj, editor);
+		PsiFile psiFile = PsiDocumentManager.getInstance(proj).getPsiFile(editor.getDocument());
 
 		GenericLogFormDialog dialog = new GenericLogFormDialog(proj, getClassVariables(editor), getLocalVariables(editor), getMethodParameters(editor));
 
-		if (dialog.showAndGet()) {
+		if (dialog.showAndGet() && psiFile instanceof PsiJavaFile) {
 			GenericLogModel logModel = dialog.buildLogModel();
 			WriteCommandAction.runWriteCommandAction(proj, () -> {
-				PsiClass selectedClass = getSelectedCursorClass(proj, editor);
+				LoggerImportVisitor importVisitor = new LoggerImportVisitor((PsiJavaFile) selectedClass.getContainingFile(), Arrays.asList(classImports));
+				LoggerDeclarationVisitor declarationVisitor = new LoggerDeclarationVisitor(selectedClass);
 
-				declareLogger(selectedClass);
+				selectedClass.accept(declarationVisitor);
+				psiFile.accept(importVisitor);
+
 				this.applyLogStatements(logModel, proj, editor);
 			});
 		}

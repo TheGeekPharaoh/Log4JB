@@ -53,8 +53,6 @@ public class LogClassAction extends LogMethodAction {
 
 			List<PsiMethod> methods = Arrays.asList(selectedClass.getMethods());
 			WriteCommandAction.runWriteCommandAction(proj, () -> {
-				declareLogger(selectedClass);
-
 				methods.forEach(m -> {
 					this.addLoggingToMethod((PsiJavaFile) psiFile, selectedClass, m);
 				});

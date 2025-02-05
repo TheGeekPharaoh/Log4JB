@@ -59,7 +59,6 @@ public class LogMethodAction extends AbstractLoggingAction {
 		if (psiFile instanceof PsiJavaFile) {
 			PsiMethod method = getSelectedCursorMethod(proj, editor);
 			WriteCommandAction.runWriteCommandAction(proj, () -> {
-				declareLogger(selectedClass);
 				this.addLoggingToMethod((PsiJavaFile) psiFile, selectedClass, method);
 			});
 		}
