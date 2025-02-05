@@ -1,12 +1,12 @@
 package net.odyssi.log4jb.actions.visitors;
 
 import com.intellij.psi.*;
-import com.intellij.psi.util.PsiTreeUtil;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.util.Key;
 
 public class LoggerDeclarationVisitor extends JavaElementVisitor {
+
+	private static final Key<Boolean> LOGGER_FIELD_EXISTS = Key.create("LoggerDeclarationVisitor");
 	private final PsiClass psiClass;
-	private boolean loggerFieldExists = false;
 
 	public LoggerDeclarationVisitor(PsiClass psiClass) {
 		this.psiClass = psiClass;
@@ -16,14 +16,18 @@ public class LoggerDeclarationVisitor extends JavaElementVisitor {
 	public void visitField(PsiField field) {
 		super.visitField(field);
 		if (field.getName().equals("logger") && field.getType().equalsToText("Logger")) {
-			loggerFieldExists = true;
+			psiClass.putUserData(LOGGER_FIELD_EXISTS, true);
 		}
 	}
 
 	@Override
 	public void visitClass(PsiClass aClass) {
 		super.visitClass(aClass);
-		if (!loggerFieldExists) {
+		// Do nothing here
+	}
+
+	public void addLoggerFieldIfNotExists() {
+		if (!(Boolean) psiClass.getUserData(LOGGER_FIELD_EXISTS)) {
 			addLoggerField();
 		}
 	}
