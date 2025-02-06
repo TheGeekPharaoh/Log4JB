@@ -11,12 +11,9 @@ import org.jetbrains.annotations.NotNull;
  */
 public class SystemOutReplacementVisitor extends AbstractReplacementVisitor {
 
-
 	public SystemOutReplacementVisitor(PsiMethod method) {
 		super(method);
 	}
-
-
 
 	public void visitMethodCallExpression(PsiMethodCallExpression expression) {
 		if (PsiTreeUtil.isAncestor(getMethod(), expression, false)) {
@@ -39,12 +36,5 @@ public class SystemOutReplacementVisitor extends AbstractReplacementVisitor {
 			}
 		}
 		super.visitMethodCallExpression(expression);
-	}
-
-	private String createLoggerStatement(PsiExpression argument, boolean isError) {
-		String argumentText = argument.getText();
-		String loggerName = "loggy"; // adjust this to your logger variable name
-		String loggerMethod = isError ? "error" : "info";
-		return String.format("%s.%s(%s);", loggerName, loggerMethod, argumentText);
 	}
 }
