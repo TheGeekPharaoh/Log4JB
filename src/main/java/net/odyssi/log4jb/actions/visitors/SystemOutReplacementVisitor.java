@@ -28,14 +28,12 @@ public class SystemOutReplacementVisitor extends AbstractReplacementVisitor {
 					String args = expression.getArgumentList().getText();
 					// Remove the parentheses from the argument list
 					args = args.substring(1, args.length() - 1);
-					// FIXME Add method signature
 					String methodDeclaration = getMethodDeclaration(getMethod());
-					System.out.println("methodDeclaration - " + methodDeclaration);
+
 					String template = "if(%s.isDebugEnabled()) {\n	%s.debug(\"%s - %s\");\n}";
 					String sanitizedArgs = args.replaceAll("^\"|\"$", "");
 
 					String logStatementText = template.formatted("logger", "logger", methodDeclaration, sanitizedArgs);
-					System.out.println("logStatementText = " + logStatementText);
 
 					PsiStatement logStatement = factory.createStatementFromText(logStatementText, null);
 					PsiElement parent = expression.getParent();
@@ -43,9 +41,6 @@ public class SystemOutReplacementVisitor extends AbstractReplacementVisitor {
 						PsiStatement statement = (PsiStatement) parent;
 						statement.replace(logStatement);
 					}
-
-					// Replace the original expression with the new one
-//					expression.replace(logStatement);
 				}
 
 			}
