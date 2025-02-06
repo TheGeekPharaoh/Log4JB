@@ -26,14 +26,16 @@
     </ul>
 
     Work on Log4JB is still in the early stages, but you can track progress and feature implementations on the plugin's <a href="https://github.com/TheGeekPharaoh/Log4JB">GitHub repo</a>.
+  ]]></description>
 
+    <change-notes><![CDATA[
     What's new in Log4JB v0.2:
     <ul>
         <li>Updated implementation for generating log statements to better align with IntelliJ standards</li>
         <li>Bugfix for method end log statements being incorrectly applied after a return statement</li>
         <li>Bugfix for methods with multiple return statements not having log statements generated properly</li>
     </ul>
-  ]]></description>
+    ]]></change-notes>
 
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
