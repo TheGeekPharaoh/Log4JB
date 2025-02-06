@@ -8,7 +8,7 @@ import com.intellij.psi.PsiMethod;
  *
  * @author sdnakhla
  */
-public abstract class AbstractReplacementVisitor extends JavaRecursiveElementVisitor {
+public abstract class AbstractReplacementVisitor extends AbstractLoggingVisitor {
 
 	private final PsiMethod method;
 
