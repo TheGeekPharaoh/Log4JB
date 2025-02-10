@@ -2,7 +2,10 @@ package net.odyssi.log4jb.actions.visitors;
 
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
+import net.odyssi.log4jb.actions.LogMethodAction;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,14 +17,22 @@ import java.util.List;
  */
 public class SystemErrReplacementVisitor extends AbstractReplacementVisitor {
 
+	private static final Logger logger = LoggerFactory.getLogger(SystemErrReplacementVisitor.class);
+
 	private final List<PsiMethodCallExpression> expressionsToReplace = new ArrayList<>();
 
 	public SystemErrReplacementVisitor(PsiMethod method) {
 		super(method);
+		if (logger.isDebugEnabled()) {
+			logger.debug("SystemErrReplacementVisitor(PsiMethod) - end");
+		}
 	}
 
 	@Override
 	public void visitMethodCallExpression(PsiMethodCallExpression expression) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("visitMethodCallExpression(PsiMethodCallExpression) - start");
+		}
 		super.visitMethodCallExpression(expression);
 
 		if (PsiTreeUtil.isAncestor(getMethod(), expression, false)) {
@@ -35,15 +46,27 @@ public class SystemErrReplacementVisitor extends AbstractReplacementVisitor {
 				}
 			}
 		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("visitMethodCallExpression(PsiMethodCallExpression) - end");
+		}
 	}
 
 	@Override
 	public void visitJavaFile(@NotNull PsiJavaFile file) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("visitJavaFile(PsiJavaFile) - start");
+		}
 		super.visitJavaFile(file);
 		this.performReplacements();
+		if (logger.isDebugEnabled()) {
+			logger.debug("visitJavaFile(PsiJavaFile) - end");
+		}
 	}
 
 	protected void performReplacements() {
+		if (logger.isDebugEnabled()) {
+			logger.debug("performReplacements() - start");
+		}
 		for (PsiMethodCallExpression expression : expressionsToReplace) {
 			// Create a new logger.debug() call
 			PsiElementFactory factory = PsiElementFactory.getInstance(expression.getProject());
@@ -63,6 +86,9 @@ public class SystemErrReplacementVisitor extends AbstractReplacementVisitor {
 				PsiStatement statement = (PsiStatement) parent;
 				statement.replace(logStatement);
 			}
+		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("performReplacements() - end");
 		}
 	}
 }

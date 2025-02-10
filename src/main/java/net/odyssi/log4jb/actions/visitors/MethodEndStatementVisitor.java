@@ -2,6 +2,9 @@ package net.odyssi.log4jb.actions.visitors;
 
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
+import net.odyssi.log4jb.actions.LogMethodAction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
@@ -20,12 +23,20 @@ public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 
 	private boolean hasReturnStatement = false;
 
+	private static final Logger logger = LoggerFactory.getLogger(MethodEndStatementVisitor.class);
+
 	public MethodEndStatementVisitor(PsiMethod method) {
 		super(method);
+		if (logger.isDebugEnabled()) {
+			logger.debug("MethodEndStatementVisitor(PsiMethod) - end");
+		}
 	}
 
 	@Override
 	public void visitReturnStatement(PsiReturnStatement element) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("visitReturnStatement(PsiReturnStatement) - start");
+		}
 		super.visitReturnStatement(element);
 		hasReturnStatement = true;
 
@@ -49,10 +60,16 @@ public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 		if (!logStatementExists) {
 			insertStatementBefore(element);
 		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("visitReturnStatement(PsiReturnStatement) - end");
+		}
 	}
 
 	@Override
 	public void visitCodeBlock(PsiCodeBlock block) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("visitCodeBlock(PsiCodeBlock) - start");
+		}
 		super.visitCodeBlock(block);
 		if (!hasReturnStatement && block == getMethod().getBody()) {
 
@@ -73,18 +90,33 @@ public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 				insertStatementAtEnd(block);
 			}
 		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("visitCodeBlock(PsiCodeBlock) - end");
+		}
 	}
 
 	private void insertStatementBefore(PsiReturnStatement element) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("insertStatementBefore(PsiReturnStatement) - start");
+		}
 		PsiStatement newStatement = buildLogStatement();
 		element.getParent().addBefore(newStatement, element);
 		CodeStyleManager.getInstance(getMethod().getProject()).reformat(newStatement);
+		if (logger.isDebugEnabled()) {
+			logger.debug("insertStatementBefore(PsiReturnStatement) - end");
+		}
 	}
 
 	private void insertStatementAtEnd(PsiCodeBlock block) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("insertStatementAtEnd(PsiCodeBlock) - start");
+		}
 		PsiStatement statement = buildLogStatement();
 		block.add(statement);
 		CodeStyleManager.getInstance(getMethod().getProject()).reformat(statement);
+		if (logger.isDebugEnabled()) {
+			logger.debug("insertStatementAtEnd(PsiCodeBlock) - end");
+		}
 	}
 
 	/**
@@ -93,6 +125,9 @@ public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 	 * @return The log statement
 	 */
 	private PsiStatement buildLogStatement() {
+		if (logger.isDebugEnabled()) {
+			logger.debug("buildLogStatement() - start");
+		}
 		String methodDeclaration = getMethodDeclaration(getMethod());
 		String startDeclaration = methodDeclaration + logStatementEnd;
 		String startMethodStatementStr = guardedLogStatementTemplate.formatted(loggerObjectName, loggerObjectName, startDeclaration);
@@ -100,6 +135,9 @@ public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 		PsiElementFactory factory = JavaPsiFacade.getElementFactory(getMethod().getProject());
 		PsiStatement statement = factory.createStatementFromText(startMethodStatementStr, null);
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("buildLogStatement() - end");
+		}
 		return statement;
 	}
 
