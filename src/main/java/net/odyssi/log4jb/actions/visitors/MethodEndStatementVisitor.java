@@ -12,7 +12,6 @@ import java.util.Arrays;
  * A {@link org.intellij.markdown.ast.visitors.Visitor} implementation that adds a logging statement before each return
  * statement in a method
  */
-// TODO Add check for existing log statements
 public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 
 	private static final String guardedLogStatementTemplate = "if(%s.isDebugEnabled()) {\n	%s.debug(\"%s\");\n}";
