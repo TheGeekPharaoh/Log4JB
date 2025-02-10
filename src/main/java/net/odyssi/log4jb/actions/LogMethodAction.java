@@ -6,7 +6,6 @@ import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
-import com.intellij.psi.codeStyle.CodeStyleManager;
 import net.odyssi.log4jb.actions.visitors.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -71,7 +70,7 @@ public class LogMethodAction extends AbstractLoggingAction {
 		if (psiFile instanceof PsiJavaFile) {
 			PsiMethod method = getSelectedCursorMethod(proj, editor);
 			WriteCommandAction.runWriteCommandAction(proj, () -> {
-				this.addLoggingToMethod((PsiJavaFile) psiFile, selectedClass, method);
+				this.addLoggingToMethod(method);
 			});
 		}
 		if (logger.isDebugEnabled()) {
@@ -82,17 +81,25 @@ public class LogMethodAction extends AbstractLoggingAction {
 	/**
 	 * Adds start and end logging statements to the specified {@link PsiMethod}
 	 *
-	 * @param psiClass The PSI class
-	 * @param method   The method
+	 * @param method The method
 	 */
-	public void addLoggingToMethod(PsiJavaFile javaFile, PsiClass psiClass, PsiMethod method) {
+	public void addLoggingToMethod(PsiMethod method) {
 		MethodStartStatementVisitor startStatementVisitor = new MethodStartStatementVisitor(method);
 		MethodEndStatementVisitor endStatementVisitor = new MethodEndStatementVisitor(method);
-		LoggerImportVisitor importVisitor = new LoggerImportVisitor((PsiJavaFile) psiClass.getContainingFile(), Arrays.asList(classImports));
-		LoggerDeclarationVisitor declarationVisitor = new LoggerDeclarationVisitor(psiClass);
 
 		method.accept(startStatementVisitor);
 		method.accept(endStatementVisitor);
+	}
+
+	/**
+	 * Adds import statements and logger declaration to the given class
+	 * @param javaFile The java file
+	 * @param psiClass The class
+	 */
+	public void addLoggingToClass(PsiJavaFile javaFile, PsiClass psiClass) {
+		LoggerImportVisitor importVisitor = new LoggerImportVisitor((PsiJavaFile) psiClass.getContainingFile(), Arrays.asList(classImports));
+		LoggerDeclarationVisitor declarationVisitor = new LoggerDeclarationVisitor(psiClass);
+
 		psiClass.accept(declarationVisitor);
 		javaFile.accept(importVisitor);
 	}
