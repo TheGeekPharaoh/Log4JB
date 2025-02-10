@@ -30,14 +30,29 @@ public class LogMethodAction extends AbstractLoggingAction {
 	private static final Logger logger = LoggerFactory.getLogger(LogMethodAction.class);
 
 	public void update(@NotNull AnActionEvent e) {
-		// Check if a Java class is selected
 		if (logger.isDebugEnabled()) {
 			logger.debug("update(AnActionEvent) - start");
 		}
-		boolean isEnabled = isJavaMethodSelected(e);
 
-		// Enable or disable the action
-		e.getPresentation().setEnabled(isEnabled);
+		boolean methodSelected = isJavaMethodSelected(e);
+		boolean enabled;
+		if(methodSelected) {
+			Project proj = e.getProject();
+			Editor editor = e.getRequiredData(CommonDataKeys.EDITOR);
+			PsiFile psiFile = PsiDocumentManager.getInstance(proj).getPsiFile(editor.getDocument());
+
+			if (psiFile instanceof PsiJavaFile) {
+				PsiMethod method = getSelectedCursorMethod(proj, editor);
+				enabled = !method.isConstructor();
+			} else {
+				enabled = false;
+			}
+		} else {
+			enabled = false;
+		}
+
+		e.getPresentation().setEnabled(enabled);
+
 		if (logger.isDebugEnabled()) {
 			logger.debug("update(AnActionEvent) - end");
 		}
