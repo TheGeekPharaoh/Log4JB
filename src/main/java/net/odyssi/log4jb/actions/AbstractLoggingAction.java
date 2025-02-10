@@ -68,6 +68,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 		PsiFile file = PsiManager.getInstance(project).findFile(editor.getVirtualFile());
 
 		if (file == null) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("getSelectedCursorMethod(Project,Editor) - end");
+			}
 			return null;
 		}
 
@@ -82,6 +85,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 		while ((parent = parent.getParent()) != null) {
 			if (parent instanceof PsiMethod) {
 				System.out.println("FOUND METHOD - " + parent);
+				if (logger.isDebugEnabled()) {
+					logger.debug("getSelectedCursorMethod(Project,Editor) - end");
+				}
 				return (PsiMethod) parent;
 			}
 		}
@@ -106,6 +112,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 		PsiFile file = PsiManager.getInstance(project).findFile(editor.getVirtualFile());
 
 		if (file == null) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("getSelectedCursorClass(Project,Editor) - end");
+			}
 			return null;
 		}
 
@@ -120,6 +129,9 @@ public abstract class AbstractLoggingAction extends AnAction {
 		while ((parent = parent.getParent()) != null) {
 			if (parent instanceof PsiClass) {
 				System.out.println("FOUND CLASS - " + parent);
+				if (logger.isDebugEnabled()) {
+					logger.debug("getSelectedCursorClass(Project,Editor) - end");
+				}
 				return (PsiClass) parent;
 			}
 		}
@@ -142,11 +154,21 @@ public abstract class AbstractLoggingAction extends AnAction {
 			logger.debug("getSelectedCursorLocalVariable(Project,Editor) - start");
 		}
 		PsiMethod selectedMethod = getSelectedCursorMethod(project, editor);
+		if (selectedMethod == null) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("getSelectedCursorLocalVariable(Project,Editor) - end");
+			}
+			return null;
+		}
+
 		PsiFile file = selectedMethod.getContainingFile();
 
 		int offset = editor.getCaretModel().getOffset();
 		PsiElement element = file.findElementAt(offset);
 		if (element == null) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("getSelectedCursorLocalVariable(Project,Editor) - end");
+			}
 			return null;
 		}
 
@@ -155,16 +177,25 @@ public abstract class AbstractLoggingAction extends AnAction {
 			if (reference != null) {
 				PsiElement declaration = reference.resolve();
 				if (declaration instanceof PsiLocalVariable) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("getSelectedCursorLocalVariable(Project,Editor) - end");
+					}
 					return (PsiLocalVariable) declaration;
 				}
 			} else {
 				// If no reference is found, check if the identifier is part of a local variable declaration
 				PsiElement parent = identifier.getParent();
 				if (parent instanceof PsiLocalVariable) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("getSelectedCursorLocalVariable(Project,Editor) - end");
+					}
 					return (PsiLocalVariable) parent;
 				} else if (parent instanceof PsiReferenceExpression refExpr) {
 					PsiElement resolvedElement = refExpr.resolve();
 					if (resolvedElement instanceof PsiLocalVariable variable) {
+						if (logger.isDebugEnabled()) {
+							logger.debug("getSelectedCursorLocalVariable(Project,Editor) - end");
+						}
 						return variable;
 					}
 				}
