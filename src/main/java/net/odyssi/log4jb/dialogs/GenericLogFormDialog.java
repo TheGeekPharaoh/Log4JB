@@ -2,9 +2,9 @@ package net.odyssi.log4jb.dialogs;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
-import net.odyssi.log4jb.forms.GenericLogForm;
-import net.odyssi.log4jb.forms.GenericLogModel;
-import net.odyssi.log4jb.forms.ReadOnlyTableModel;
+import net.odyssi.log4jb.dialogs.forms.GenericLogForm;
+import net.odyssi.log4jb.dialogs.forms.GenericLogModel;
+import net.odyssi.log4jb.dialogs.forms.ReadOnlyTableModel;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

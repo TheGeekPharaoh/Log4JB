@@ -11,7 +11,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import net.odyssi.log4jb.actions.visitors.LoggerDeclarationVisitor;
 import net.odyssi.log4jb.actions.visitors.LoggerImportVisitor;
 import net.odyssi.log4jb.dialogs.GenericLogFormDialog;
-import net.odyssi.log4jb.forms.GenericLogModel;
+import net.odyssi.log4jb.dialogs.forms.GenericLogModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

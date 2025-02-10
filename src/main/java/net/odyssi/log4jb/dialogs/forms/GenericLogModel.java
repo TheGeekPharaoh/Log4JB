@@ -1,4 +1,4 @@
-package net.odyssi.log4jb.forms;
+package net.odyssi.log4jb.dialogs.forms;
 
 import java.util.*;
 
