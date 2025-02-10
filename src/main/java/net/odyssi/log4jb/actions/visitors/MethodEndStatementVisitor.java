@@ -2,7 +2,6 @@ package net.odyssi.log4jb.actions.visitors;
 
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
-import net.odyssi.log4jb.actions.LogMethodAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,15 +13,11 @@ import java.util.Arrays;
  */
 public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 
-	private static final String guardedLogStatementTemplate = "if(%s.isDebugEnabled()) {\n	%s.debug(\"%s\");\n}";
-
-	private static final String logStatementEnd = " - end";
-
 	public static final String loggerObjectName = "logger";
-
-	private boolean hasReturnStatement = false;
-
+	private static final String guardedLogStatementTemplate = "if(%s.isDebugEnabled()) {\n	%s.debug(\"%s\");\n}";
+	private static final String logStatementEnd = " - end";
 	private static final Logger logger = LoggerFactory.getLogger(MethodEndStatementVisitor.class);
+	private boolean hasReturnStatement = false;
 
 	public MethodEndStatementVisitor(PsiMethod method) {
 		super(method);
@@ -36,6 +31,7 @@ public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 		if (logger.isDebugEnabled()) {
 			logger.debug("visitReturnStatement(PsiReturnStatement) - start");
 		}
+
 		super.visitReturnStatement(element);
 		hasReturnStatement = true;
 
@@ -45,11 +41,10 @@ public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 		PsiElement parent = element.getParent();
 		boolean logStatementExists = false;
 		for (PsiElement child : parent.getChildren()) {
-			if(child instanceof PsiStatement) {
-				PsiStatement childStatement = (PsiStatement) child;
+			if (child instanceof PsiStatement childStatement) {
 				String childText = childStatement.getText().replaceAll("\\s+", "");
 
-				if(childText.equals(newStatementText) && Arrays.stream(parent.getChildren()).toList().indexOf(child) < Arrays.stream(parent.getChildren()).toList().indexOf(element)) {
+				if (childText.equals(newStatementText) && Arrays.stream(parent.getChildren()).toList().indexOf(child) < Arrays.stream(parent.getChildren()).toList().indexOf(element)) {
 					logStatementExists = true;
 					break;
 				}
@@ -115,6 +110,27 @@ public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 		CodeStyleManager.getInstance(getMethod().getProject()).reformat(statement);
 		if (logger.isDebugEnabled()) {
 			logger.debug("insertStatementAtEnd(PsiCodeBlock) - end");
+		}
+	}
+
+	@Override
+	public void visitMethod(PsiMethod method) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("visitMethod(PsiMethod) - start");
+		}
+
+		if (method.isConstructor()) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("visitMethod(PsiMethod) - end");
+			}
+
+			return;
+		}
+
+		super.visitMethod(method);
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("visitMethod(PsiMethod) - end");
 		}
 	}
 
