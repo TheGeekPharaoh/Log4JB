@@ -35,7 +35,7 @@ public class LogMethodAction extends AbstractLoggingAction {
 
 		boolean methodSelected = isJavaMethodSelected(e);
 		boolean enabled;
-		if(methodSelected) {
+		if (methodSelected) {
 			Project proj = e.getProject();
 			Editor editor = e.getRequiredData(CommonDataKeys.EDITOR);
 			PsiFile psiFile = PsiDocumentManager.getInstance(proj).getPsiFile(editor.getDocument());
@@ -86,13 +86,16 @@ public class LogMethodAction extends AbstractLoggingAction {
 	public void addLoggingToMethod(PsiMethod method) {
 		MethodStartStatementVisitor startStatementVisitor = new MethodStartStatementVisitor(method);
 		MethodEndStatementVisitor endStatementVisitor = new MethodEndStatementVisitor(method);
+		ExceptionLoggingVisitor exceptionVisitor = new ExceptionLoggingVisitor(method);
 
 		method.accept(startStatementVisitor);
 		method.accept(endStatementVisitor);
+		method.accept(exceptionVisitor);
 	}
 
 	/**
 	 * Adds import statements and logger declaration to the given class
+	 *
 	 * @param javaFile The java file
 	 * @param psiClass The class
 	 */
