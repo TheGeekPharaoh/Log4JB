@@ -34,6 +34,7 @@ The tables below outlines the current status of the implementation:
 | :heavy_check_mark:  | *Log this variable*                  | Generates a log statement for the selected variable.  Currently, this is hard-coded to the `DEBUG` log level |
 | :heavy_check_mark:  | *Log at this position...*            | Generates a user-defined log statement, including selected variables                                         |
 |                     | *Exchange logging framework*         | Replaces the logging statements generated for one log framework (i.e. log4j2) with another (i.e. slf4j)      |
+| :heavy_check_mark:  | Log caught exceptions                | Generates log statements for any caught exceptions                                                           |
 | :heavy_check_mark:  | *Replace `System.out.println(...)`*  | Replaces any `System.out.println` calls with generated logging statements                                    |
 | :heavy_check_mark:  | *Replace `System.err.println(...)`*  | Replaces any `System.err.println` calls with generated logging statements                                    |
 |                     | *Reapply in this method/class*       | Re-generates all generated logging statements.  This is useful when the method parameters have been modified |

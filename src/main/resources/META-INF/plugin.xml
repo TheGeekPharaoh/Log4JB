@@ -32,6 +32,7 @@
     What's new in Log4JB v0.3:
     <ul>
         <li>Replace any calls to System.err.println() with properly formatted log statements</li>
+        <li>Add log statements for any caught exceptions</li>
         <li>Fix:  Logger variable not being declared properly in some cases</li>
         <li>Fix:  Include method signature in logging when replacing System.out.println() calls</li>
         <li>Fix:  Occasional occurring when declaring a logger or logging the class</li>
