@@ -14,10 +14,10 @@ public class ExceptionLoggingVisitor extends AbstractMethodLoggingVisitor {
 	public void visitMethod(PsiMethod method) {
 		super.visitMethod(method);
 
+		String logStatementTemplate = "%s.%s(\"%s\", %s);";
+		String methodDeclaration = getMethodDeclaration(getMethod());
+
 		// FIXME Correct log statement text
-		PsiExpressionStatement printlnStatement = (PsiExpressionStatement) PsiElementFactory.SERVICE
-				.getInstance(method.getProject())
-				.createStatementFromText("System.out.println(\"HELLO\");", null);
 
 		// Get the method body
 		PsiCodeBlock methodBody = method.getBody();
@@ -32,27 +32,41 @@ public class ExceptionLoggingVisitor extends AbstractMethodLoggingVisitor {
 
 					// Iterate over all catch blocks
 					for (PsiCatchSection catchSection : tryStatement.getCatchSections()) {
+						PsiParameter exceptionParameter = catchSection.getParameter();
+						String exceptionVariableName = exceptionParameter.getName();
+
+						String errorLogStatementText = logStatementTemplate.formatted("logger", "error", methodDeclaration, exceptionVariableName);
+						PsiExpressionStatement errorLogStatement = (PsiExpressionStatement) PsiElementFactory.SERVICE
+								.getInstance(method.getProject())
+								.createStatementFromText(errorLogStatementText, null);
+
+						String warnLogStatementText = logStatementTemplate.formatted("logger", "warn", methodDeclaration, exceptionVariableName);
+						PsiExpressionStatement warnLogStatement = (PsiExpressionStatement) PsiElementFactory.SERVICE
+								.getInstance(method.getProject())
+								.createStatementFromText(warnLogStatementText, null);
+
 						// Get the catch block body
 						PsiCodeBlock catchBody = catchSection.getCatchBlock();
 
-						// Check if the catch block already contains the println statement
+						// Check if the catch block already contains the log statement
 						PsiManager psiManager = PsiManager.getInstance(method.getProject());
 						boolean printlnStatementExists = Arrays.stream(catchBody.getStatements())
-								.anyMatch(s -> psiManager.areElementsEquivalent(s, printlnStatement));
+								.anyMatch(s -> (areStatementsEqual(s, errorLogStatement) || areStatementsEqual(s, warnLogStatement)));
 
 						// Add the println statement to the catch block body if it doesn't exist
 						if (!printlnStatementExists) {
 							PsiStatement[] statements = catchBody.getStatements();
-							PsiExpressionStatement newPrintlnStatement = (PsiExpressionStatement) printlnStatement.copy();
 							if(statements.length == 0) {
-								catchBody.add(newPrintlnStatement);
+								PsiExpressionStatement newLogStatement = (PsiExpressionStatement) warnLogStatement.copy();
+								catchBody.add(newLogStatement);
 							} else {
+								PsiExpressionStatement newLogStatement = (PsiExpressionStatement) errorLogStatement.copy();
 								PsiStatement lastStatement = statements[statements.length - 1];
 
 								if (lastStatement instanceof PsiReturnStatement) {
-									catchBody.addBefore(newPrintlnStatement, lastStatement);
+									catchBody.addBefore(newLogStatement, lastStatement);
 								} else {
-									catchBody.add(newPrintlnStatement);
+									catchBody.add(newLogStatement);
 								}
 							}
 						}
