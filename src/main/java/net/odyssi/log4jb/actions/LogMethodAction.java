@@ -88,9 +88,9 @@ public class LogMethodAction extends AbstractLoggingAction {
 		MethodEndStatementVisitor endStatementVisitor = new MethodEndStatementVisitor(method);
 		ExceptionLoggingVisitor exceptionVisitor = new ExceptionLoggingVisitor(method);
 
+		method.accept(exceptionVisitor);
 		method.accept(startStatementVisitor);
 		method.accept(endStatementVisitor);
-		method.accept(exceptionVisitor);
 	}
 
 	/**
