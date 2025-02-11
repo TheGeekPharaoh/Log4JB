@@ -37,14 +37,11 @@ public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 
 		// Check if a matching log statement already exists before the return statement
 		PsiStatement newStatement = buildLogStatement();
-		String newStatementText = newStatement.getText().replaceAll("\\s+", "");
 		PsiElement parent = element.getParent();
 		boolean logStatementExists = false;
 		for (PsiElement child : parent.getChildren()) {
 			if (child instanceof PsiStatement childStatement) {
-				String childText = childStatement.getText().replaceAll("\\s+", "");
-
-				if (childText.equals(newStatementText) && Arrays.stream(parent.getChildren()).toList().indexOf(child) < Arrays.stream(parent.getChildren()).toList().indexOf(element)) {
+				if (areStatementsEqual(newStatement, childStatement) && Arrays.stream(parent.getChildren()).toList().indexOf(child) < Arrays.stream(parent.getChildren()).toList().indexOf(element)) {
 					logStatementExists = true;
 					break;
 				}
@@ -69,12 +66,10 @@ public class MethodEndStatementVisitor extends AbstractMethodLoggingVisitor {
 
 			// Check if a matching log statement already exists at the end of the code block
 			PsiStatement statement = buildLogStatement();
-			String statementText = statement.getText().replaceAll("\\s+", "");
 			PsiStatement[] statements = block.getStatements();
 			boolean logStatementExists = false;
 			for (PsiStatement existingStatement : statements) {
-				String existingStatementText = existingStatement.getText().replaceAll("\\s+", "");
-				if (existingStatementText.equals(statementText)) {
+				if (areStatementsEqual(statement, existingStatement)) {
 					logStatementExists = true;
 					break;
 				}

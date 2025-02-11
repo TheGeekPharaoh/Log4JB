@@ -40,14 +40,12 @@ public class MethodStartStatementVisitor extends AbstractMethodLoggingVisitor {
 
 		if (method.getBody() != null) {
 			PsiStatement logStatement = buildLogStatement();
-			String logStatementText = logStatement.getText().replaceAll("\\s+", "");
 			PsiStatement[] statements = method.getBody().getStatements();
 
 			// Check if a matching log statement already exists
 			boolean logStatementExists = false;
 			for (PsiStatement statement : statements) {
-				String statementText = statement.getText().replaceAll("\\s+", "");
-				boolean match = logStatementText.equals(statementText);
+				boolean match = areStatementsEqual(statement, logStatement);
 				if (match) {
 					logStatementExists = true;
 					break;

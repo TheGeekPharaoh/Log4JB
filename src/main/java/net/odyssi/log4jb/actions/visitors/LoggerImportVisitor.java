@@ -65,7 +65,7 @@ public class LoggerImportVisitor extends JavaRecursiveElementVisitor {
 		}
 		PsiClass psiClass = JavaPsiFacade.getInstance(file.getProject()).findClass(importStatement, file.getResolveScope());
 		if (psiClass != null) {
-			PsiImportStatement statement = PsiElementFactory.SERVICE.getInstance(file.getProject())
+			PsiImportStatement statement = PsiElementFactory.getInstance(file.getProject())
 					.createImportStatement(psiClass);
 			((PsiJavaFile) file).getImportList().add(statement);
 		}

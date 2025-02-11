@@ -36,12 +36,12 @@ public class ExceptionLoggingVisitor extends AbstractMethodLoggingVisitor {
 						String exceptionVariableName = exceptionParameter.getName();
 
 						String errorLogStatementText = logStatementTemplate.formatted("logger", "error", methodDeclaration, exceptionVariableName);
-						PsiExpressionStatement errorLogStatement = (PsiExpressionStatement) PsiElementFactory.SERVICE
+						PsiExpressionStatement errorLogStatement = (PsiExpressionStatement) PsiElementFactory
 								.getInstance(method.getProject())
 								.createStatementFromText(errorLogStatementText, null);
 
 						String warnLogStatementText = logStatementTemplate.formatted("logger", "warn", methodDeclaration, exceptionVariableName);
-						PsiExpressionStatement warnLogStatement = (PsiExpressionStatement) PsiElementFactory.SERVICE
+						PsiExpressionStatement warnLogStatement = (PsiExpressionStatement) PsiElementFactory
 								.getInstance(method.getProject())
 								.createStatementFromText(warnLogStatementText, null);
 
