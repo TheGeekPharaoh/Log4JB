@@ -17,8 +17,6 @@ public class ExceptionLoggingVisitor extends AbstractMethodLoggingVisitor {
 		String logStatementTemplate = "%s.%s(\"%s\", %s);";
 		String methodDeclaration = getMethodDeclaration(getMethod());
 
-		// FIXME Correct log statement text
-
 		// Get the method body
 		PsiCodeBlock methodBody = method.getBody();
 
