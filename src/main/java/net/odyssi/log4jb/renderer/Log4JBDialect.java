@@ -14,9 +14,10 @@ public interface Log4JBDialect {
 	/**
 	 * Returns the String used to declare a logger variable within a class
 	 *
+	 * @param className The class name
 	 * @return The logger declaration statement
 	 */
-	String getLoggerDeclarationStatement();
+	String getLoggerDeclarationStatement(String className);
 
 	/**
 	 * Returns a {@link List} of the imports needed to declare and use the logger
@@ -69,12 +70,13 @@ public interface Log4JBDialect {
 	 * Returns the String used to log the specified variable name
 	 *
 	 * @param methodName   The method name
+	 * @param variableType The variable type
 	 * @param variableName The logged variable name
 	 * @param logLevel     The log level
 	 * @param methodArgs   The optional argument types for the method
 	 * @return The log statement
 	 */
-	String getVariableLogStatement(String methodName, String variableName, String logLevel, String... methodArgs);
+	String getVariableLogStatement(String methodName, String variableType, String variableName, String logLevel, String... methodArgs);
 
 	/**
 	 * Returns the String used to log a user-specified message
