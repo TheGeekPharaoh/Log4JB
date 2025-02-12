@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "net.odyssi"
-version = "0.3"
+version = "0.4"
 
 repositories {
     mavenCentral()

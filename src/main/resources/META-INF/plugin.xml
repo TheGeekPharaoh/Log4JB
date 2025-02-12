@@ -6,7 +6,7 @@
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
     <name>Log4JB</name>
-    <version>0.3</version>
+    <version>0.4</version>
     <depends>com.intellij.modules.java</depends>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
@@ -29,13 +29,8 @@
   ]]></description>
 
     <change-notes><![CDATA[
-    What's new in Log4JB v0.3:
+    What's new in Log4JB v0.4:
     <ul>
-        <li>Replace any calls to System.err.println() with properly formatted log statements</li>
-        <li>Add log statements for any caught exceptions</li>
-        <li>Fix:  Logger variable not being declared properly in some cases</li>
-        <li>Fix:  Include method signature in logging when replacing System.out.println() calls</li>
-        <li>Fix:  Occasional occurring when declaring a logger or logging the class</li>
     </ul>
     ]]></change-notes>
 
