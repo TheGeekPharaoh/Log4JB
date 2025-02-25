@@ -29,8 +29,9 @@
   ]]></description>
 
     <change-notes><![CDATA[
-    What's new in Log4JB v0.4:
+    What's new in Log4JB v0.3.1:
     <ul>
+        <li>Fix for logger not being declared when logging a method</li>
     </ul>
     ]]></change-notes>
 
