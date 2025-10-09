@@ -1,0 +1,61 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>net.odyssi.log4jb</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>Log4JB</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor url="https://www.yourcompany.com">YourCompany</vendor>
+
+    <description><![CDATA[
+    Log4JB is the spiritual successor to the excellent Log4e plugin for the Eclipse IDE.  Log4JB makes it easy to add structured, standardized logging to your Java applications in IntelliJ IDEA.  Using Log4JB, you can easily:
+
+    <ul>
+        <li>Declare a new logger instance for use within your class</li>
+        <li>Added method start/end log statements</li>
+        <li>Log the value of a selected variable</li>
+        <li>Add user-defined log statements at any point in your code, including any variables</li>
+    </ul>
+
+    Work on Log4JB is still in the early stages, but you can track progress and feature implementations on the plugin's <a href="https://github.com/TheGeekPharaoh/Log4JB">GitHub repo</a>.
+  ]]></description>
+
+    <change-notes><![CDATA[
+    What's new in Log4JB v0.3.1:
+    <ul>
+        <li>Fix for logger not being declared when logging a method</li>
+    </ul>
+    ]]></change-notes>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+
+    <actions>
+        <group id="Log4jb.ActionGroup" text="Log4JB" description="Log4JB Actions" popup="true">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+
+            <action id="Log4jb.DeclareLogger" class="net.odyssi.log4jb.actions.DeclareLoggerAction"
+                    text="Declare Logger"
+                    description="Adds a private static final SLF4J logger field."/>
+
+            <action id="Log4jb.LogMethod" class="net.odyssi.log4jb.actions.LogMethodAction"
+                    text="Log This Method"
+                    description="Adds start and end debug log statements to the current method."/>
+
+            <action id="Log4jb.LogClass" class="net.odyssi.log4jb.actions.LogClassAction"
+                    text="Log This Class"
+                    description="Declares a logger and adds log statements to all methods in the class."/>
+        </group>
+    </actions>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+
+    </extensions>
+</idea-plugin>
