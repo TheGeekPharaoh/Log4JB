@@ -1,14 +1,10 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
     <id>net.odyssi.log4jb</id>
 
-    <!-- Public plugin name should be written in Title Case.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
     <name>Log4JB</name>
 
-    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor url="https://www.yourcompany.com">YourCompany</vendor>
+    <vendor url="https://github.com/TheGeekPharaoh/Log4JB">TheGeekPharaoh</vendor>
 
     <description><![CDATA[
     Log4JB is the spiritual successor to the excellent Log4e plugin for the Eclipse IDE.  Log4JB makes it easy to add structured, standardized logging to your Java applications in IntelliJ IDEA.  Using Log4JB, you can easily:
@@ -30,8 +26,6 @@
     </ul>
     ]]></change-notes>
 
-    <!-- Product and plugin compatibility requirements.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
 
@@ -50,11 +44,13 @@
             <action id="Log4jb.LogClass" class="net.odyssi.log4jb.actions.LogClassAction"
                     text="Log This Class"
                     description="Declares a logger and adds log statements to all methods in the class."/>
+            <separator />
+            <action id="Log4jb.GenericLogAction" class="net.odyssi.log4jb.actions.GenericLogAction" text="Log at this position..."
+                    description="Generates a user-defined log statement at the selected location"/>
+            <separator />
         </group>
     </actions>
 
-    <!-- Extension points defined by the plugin.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
 
     </extensions>
