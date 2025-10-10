@@ -45,6 +45,10 @@
                     text="Log This Class"
                     description="Declares a logger and adds log statements to all methods in the class."/>
             <separator/>
+            <action id="Log4jb.LogSelectedVariable" class="net.odyssi.log4jb.actions.LogSelectedVariableAction"
+                    text="Log Selected Variable"
+                    description="Adds a debug log statement for the selected variable."/>
+            <separator />
             <action id="Log4jb.GenericLogAction" class="net.odyssi.log4jb.actions.GenericLogAction"
                     text="Log at this position..."
                     description="Generates a user-defined log statement at the selected location"/>
