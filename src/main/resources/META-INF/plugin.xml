@@ -44,13 +44,17 @@
             <action id="Log4jb.LogClass" class="net.odyssi.log4jb.actions.LogClassAction"
                     text="Log This Class"
                     description="Declares a logger and adds log statements to all methods in the class."/>
-            <separator />
-            <action id="Log4jb.GenericLogAction" class="net.odyssi.log4jb.actions.GenericLogAction" text="Log at this position..."
+            <separator/>
+            <action id="Log4jb.GenericLogAction" class="net.odyssi.log4jb.actions.GenericLogAction"
+                    text="Log at this position..."
                     description="Generates a user-defined log statement at the selected location"/>
-            <separator />
+            <separator/>
             <action id="Log4jb.SystemOutReplacement" class="net.odyssi.log4jb.actions.SystemOutReplacementAction"
                     text="Replace System.out.println()"
                     description="Replaces System.out.println() calls with logger.debug() statements."/>
+            <action id="Log4jb.SystemErrReplacement" class="net.odyssi.log4jb.actions.SystemErrReplacementAction"
+                    text="Replace System.err.println()"
+                    description="Replaces System.err.println() calls with logger.error() statements."/>
         </group>
     </actions>
 
