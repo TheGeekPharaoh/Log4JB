@@ -20,9 +20,11 @@
   ]]></description>
 
     <change-notes><![CDATA[
-    What's new in Log4JB v0.3.1:
+    What's new in Log4JB v0.4:
     <ul>
-        <li>Fix for logger not being declared when logging a method</li>
+        <li>Large number of bugfixes and stability/performance improvements</li>
+        <li>Corrected an issue where logger declaration or log statements are added more than once</li>
+        <li>Added support for removing a logger and its operations from the selected class</li>
     </ul>
     ]]></change-notes>
 
