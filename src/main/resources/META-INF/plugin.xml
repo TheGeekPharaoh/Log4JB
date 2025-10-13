@@ -59,6 +59,10 @@
             <action id="Log4jb.SystemErrReplacement" class="net.odyssi.log4jb.actions.SystemErrReplacementAction"
                     text="Replace System.err.println()"
                     description="Replaces System.err.println() calls with logger.error() statements."/>
+            <separator />
+            <action id="Log4jb.RemoveClassLogging" class="net.odyssi.log4jb.actions.RemoveClassLoggingAction"
+                    text="Remove Logging From This Class"
+                    description="Removes the logger field and all logging statements from the class."/>
         </group>
     </actions>
 
