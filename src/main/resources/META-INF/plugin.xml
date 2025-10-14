@@ -62,6 +62,13 @@
                     text="Replace System.err.println()"
                     description="Replaces System.err.println() calls with logger.error() statements."/>
             <separator />
+            <action id="Log4jb.ReapplyMethodLogging" class="net.odyssi.log4jb.actions.ReapplyMethodLoggingAction"
+                    text="Reapply logging in this method"
+                    description="Updates and regenerates existing log statements in the selected method."/>
+            <action id="Log4jb.ReapplyClassLogging" class="net.odyssi.log4jb.actions.ReapplyClassLoggingAction"
+                    text="Reapply logging in this class"
+                    description="Updates and regenerates existing log statements in the selected class."/>
+            <separator />
             <action id="Log4jb.RemoveClassLogging" class="net.odyssi.log4jb.actions.RemoveClassLoggingAction"
                     text="Remove Logging From This Class"
                     description="Removes the logger field and all logging statements from the class."/>
