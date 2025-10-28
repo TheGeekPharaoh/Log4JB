@@ -20,12 +20,9 @@
   ]]></description>
 
     <change-notes><![CDATA[
-    What's new in Log4JB v0.4:
+    What's new in Log4JB v0.4.1:
     <ul>
-        <li>Large number of bugfixes and stability/performance improvements</li>
-        <li>Corrected an issue where logger declaration or log statements are added more than once</li>
-        <li>Added support for removing a logger and its operations from the selected class</li>
-        <li>Reapply logging statements in a selected method or class -- useful when refactoring and the method signature changes!</li>
+        <li>Bugfixes for errant log statements being added, particularly after a thrown exception</li>
     </ul>
     ]]></change-notes>
 

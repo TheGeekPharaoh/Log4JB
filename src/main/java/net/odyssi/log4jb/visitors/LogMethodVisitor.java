@@ -41,32 +41,34 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
         final var bodyText = body.getText();
 
         // 1. Add "start" log statement
-        if (!bodyText.contains(startMessage)) {
-            final var startLogStatementText = String.format("if(logger.isDebugEnabled()) { logger.debug(\"%s\"); }", startMessage);
+        final var startLogStatementText = String.format("if(logger.isDebugEnabled()) { logger.debug(\"%s\"); }", startMessage);
+        if (!bodyText.contains(startLogStatementText)) {
             final var startLogStatement = factory.createStatementFromText(startLogStatementText, method);
             body.addAfter(startLogStatement, body.getLBrace());
         }
 
         // 2. Add "end" log statements before all return statements
-        if (!bodyText.contains(endMessage)) {
-            final var returnStatements = PsiTreeUtil.findChildrenOfType(body, PsiReturnStatement.class);
-            for (PsiReturnStatement returnStatement : returnStatements) {
-                final var endLogStatementText = String.format("if(logger.isDebugEnabled()) { logger.debug(\"%s\"); }", endMessage);
-                final var endLogStatement = factory.createStatementFromText(endLogStatementText, returnStatement);
-                returnStatement.getParent().addBefore(endLogStatement, returnStatement);
+        final var endLogStatementText = String.format("if(logger.isDebugEnabled()) { logger.debug(\"%s\"); }", endMessage);
+        final var returnStatements = PsiTreeUtil.findChildrenOfType(body, PsiReturnStatement.class);
+        for (PsiReturnStatement returnStatement : returnStatements) {
+            final var prevStatement = PsiTreeUtil.getPrevSiblingOfType(returnStatement, PsiStatement.class);
+            if (prevStatement != null && prevStatement.getText().equals(endLogStatementText)) {
+                continue;
             }
+            final var endLogStatement = factory.createStatementFromText(endLogStatementText, returnStatement);
+            returnStatement.getParent().addBefore(endLogStatement, returnStatement);
         }
 
         // 3. Add "end" log statement at the very end of the method if it can "fall through"
         final var statements = body.getStatements();
         if (statements.length == 0) {
-            if (!body.getText().contains(endMessage)) {
-                addFinalEndLog(body, factory);
-            }
+            addFinalEndLog(body, factory);
         } else {
             final var lastStatement = statements[statements.length - 1];
-            if (!(lastStatement instanceof PsiReturnStatement) && !lastStatement.getText().contains(endMessage)) {
-                addFinalEndLog(body, factory);
+            if (!(lastStatement instanceof PsiReturnStatement) && !(lastStatement instanceof PsiThrowStatement)) {
+                if (!lastStatement.getText().equals(endLogStatementText)) {
+                    addFinalEndLog(body, factory);
+                }
             }
         }
 
