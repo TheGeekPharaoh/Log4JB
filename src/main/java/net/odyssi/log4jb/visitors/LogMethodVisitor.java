@@ -31,8 +31,8 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitMethod(PsiMethod method) {
-        // Only visit the target method
-        if (!method.equals(psiMethod) || method.getBody() == null) {
+        // Only visit the target method and do not log constructors
+        if (!method.equals(psiMethod) || method.isConstructor() || method.getBody() == null) {
             return;
         }
 

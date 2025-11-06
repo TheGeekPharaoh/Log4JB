@@ -20,9 +20,9 @@
   ]]></description>
 
     <change-notes><![CDATA[
-    What's new in Log4JB v0.4.1:
+    What's new in Log4JB v0.5.1:
     <ul>
-        <li>Bugfixes for errant log statements being added, particularly after a thrown exception</li>
+        <li>A bugfix to ensure logging methods are not generated for a class constructor</li>
     </ul>
     ]]></change-notes>
 
