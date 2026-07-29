@@ -11,7 +11,6 @@ import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.util.PsiTreeUtil;
 import net.odyssi.log4jb.visitors.DeclareLoggerVisitor;
-import net.odyssi.log4jb.visitors.LogMethodVisitor;
 import net.odyssi.log4jb.visitors.ReapplyMethodLoggingVisitor;
 import org.jetbrains.annotations.NotNull;
 

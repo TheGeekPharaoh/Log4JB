@@ -11,7 +11,7 @@
 
     <ul>
         <li>Declare a new logger instance for use within your class</li>
-        <li>Added method start/end log statements</li>
+        <li>Add method start/end log statements</li>
         <li>Log the value of a selected variable</li>
         <li>Add user-defined log statements at any point in your code, including any variables</li>
     </ul>

@@ -55,19 +55,21 @@ public class ReapplyMethodLoggingAction extends AnAction {
             return;
         }
 
-        // Find the class containing the caret
+        // Find the method containing the caret
         int offset = editor.getCaretModel().getOffset();
-        PsiClass psiClass = PsiTreeUtil.getParentOfType(psiFile.findElementAt(offset), PsiClass.class);
+        PsiMethod psiMethod = PsiTreeUtil.getParentOfType(psiFile.findElementAt(offset), PsiMethod.class);
 
-        if (psiClass == null) {
+        if (psiMethod == null || psiMethod.getContainingClass() == null) {
             return;
         }
 
         // Execute the visitor in a write-safe context
         WriteCommandAction.runWriteCommandAction(project, "Log4JB: Reapply Method Logging", null, () -> {
             // First, ensure the logger is declared.
+            PsiClass psiClass = psiMethod.getContainingClass();
             psiClass.accept(new DeclareLoggerVisitor(psiClass));
-            psiClass.accept(new ReapplyMethodLoggingVisitor(project));
+            // Reapply logging only to the current method.
+            psiMethod.accept(new ReapplyMethodLoggingVisitor(project));
         });
     }
 

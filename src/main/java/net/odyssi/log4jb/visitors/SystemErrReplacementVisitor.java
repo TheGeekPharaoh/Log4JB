@@ -31,48 +31,56 @@ public class SystemErrReplacementVisitor extends JavaRecursiveElementVisitor {
     public void visitMethodCallExpression(PsiMethodCallExpression expression) {
         super.visitMethodCallExpression(expression);
 
-        // Check if this is a System.err.println() call.
-        if (!isSystemErrPrintln(expression)) {
+        // Check if this is a System.err.println() or System.err.print() call.
+        if (!isSystemErrPrintCall(expression)) {
             return;
         }
 
         final PsiExpressionList argumentList = expression.getArgumentList();
-        if (argumentList.getExpressionCount() != 1) {
-            return;
-        }
-
-        final PsiExpression originalArgument = argumentList.getExpressions()[0];
         final PsiElementFactory factory = JavaPsiFacade.getElementFactory(expression.getProject());
 
-        final StringBuilder messageFormat = new StringBuilder();
-        final List<String> logArguments = new ArrayList<>();
+        final String newStatementText;
 
-        // Prepend the method signature to the log message.
-        messageFormat.append(currentMethodSignature).append(" - ");
+        if (argumentList.getExpressionCount() == 0) {
+            // No-arg println() — replace with an empty error log
+            final String message = currentMethodSignature + " - (empty line)";
+            newStatementText = String.format("logger.error(\"%s\");", message);
+        } else if (argumentList.getExpressionCount() == 1) {
+            final PsiExpression originalArgument = argumentList.getExpressions()[0];
 
-        if (originalArgument instanceof PsiPolyadicExpression polyadicExpression) {
-            // Handle string concatenations (e.g., "Error: " + code).
-            for (PsiExpression operand : polyadicExpression.getOperands()) {
-                if (operand instanceof PsiLiteralExpression literal && literal.getValue() instanceof String) {
-                    messageFormat.append(literal.getValue());
+            final StringBuilder messageFormat = new StringBuilder();
+            final List<String> logArguments = new ArrayList<>();
+
+            // Prepend the method signature to the log message.
+            messageFormat.append(currentMethodSignature).append(" - ");
+
+            if (originalArgument instanceof PsiPolyadicExpression polyadicExpression) {
+                // Handle string concatenations (e.g., "Error: " + code).
+                for (PsiExpression operand : polyadicExpression.getOperands()) {
+                    if (operand instanceof PsiLiteralExpression literal && literal.getValue() instanceof String strValue) {
+                        messageFormat.append(strValue);
+                    } else {
+                        messageFormat.append("{}");
+                        logArguments.add(operand.getText());
+                    }
+                }
+            } else {
+                // Handle single arguments (literals, variables, etc.).
+                if (originalArgument instanceof PsiLiteralExpression literal && literal.getValue() instanceof String strValue) {
+                    messageFormat.append(strValue);
                 } else {
                     messageFormat.append("{}");
-                    logArguments.add(operand.getText());
+                    logArguments.add(originalArgument.getText());
                 }
             }
-        } else {
-            // Handle single arguments (literals, variables, etc.).
-            if (originalArgument instanceof PsiLiteralExpression literal && literal.getValue() instanceof String) {
-                messageFormat.append(literal.getValue());
-            } else {
-                messageFormat.append("{}");
-                logArguments.add(originalArgument.getText());
-            }
-        }
 
-        // Construct the final logger call. No guard statement is needed for the error level.
-        final String argsString = logArguments.isEmpty() ? "" : ", " + String.join(", ", logArguments);
-        final String newStatementText = String.format("logger.error(\"%s\"%s);", messageFormat, argsString);
+            // Construct the final logger call. No guard statement is needed for the error level.
+            final String argsString = logArguments.isEmpty() ? "" : ", " + String.join(", ", logArguments);
+            newStatementText = String.format("logger.error(\"%s\"%s);", messageFormat, argsString);
+        } else {
+            // Unsupported argument count — skip
+            return;
+        }
 
         // Replace the old statement with the new one.
         final PsiStatement newStatement = factory.createStatementFromText(newStatementText, expression);
@@ -82,9 +90,10 @@ public class SystemErrReplacementVisitor extends JavaRecursiveElementVisitor {
         }
     }
 
-    private boolean isSystemErrPrintln(PsiMethodCallExpression expression) {
+    private boolean isSystemErrPrintCall(PsiMethodCallExpression expression) {
         final PsiReferenceExpression methodExpression = expression.getMethodExpression();
-        if (!"println".equals(methodExpression.getReferenceName())) {
+        final String methodName = methodExpression.getReferenceName();
+        if (!"println".equals(methodName) && !"print".equals(methodName)) {
             return false;
         }
         final PsiExpression qualifier = methodExpression.getQualifierExpression();

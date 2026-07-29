@@ -47,10 +47,14 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
             body.addAfter(startLogStatement, body.getLBrace());
         }
 
-        // 2. Add "end" log statements before all return statements
+        // 2. Add "end" log statements before all return statements (excluding those in lambdas/anonymous classes)
         final var endLogStatementText = String.format("if(logger.isDebugEnabled()) { logger.debug(\"%s\"); }", endMessage);
         final var returnStatements = PsiTreeUtil.findChildrenOfType(body, PsiReturnStatement.class);
         for (PsiReturnStatement returnStatement : returnStatements) {
+            // Skip return statements that belong to nested lambdas or anonymous classes
+            if (!belongsDirectlyToMethod(returnStatement, method)) {
+                continue;
+            }
             // Check if the previous sibling already contains the end message
             final var prevStatement = PsiTreeUtil.getPrevSiblingOfType(returnStatement, PsiStatement.class);
             if (prevStatement != null && prevStatement.getText().contains(endMessage)) {
@@ -87,26 +91,27 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
             }
 
             final String exceptionName = exceptionParameter.getName();
-            final String logMessageText;
             final String logStatementText;
 
             // Check if the catch block is empty (contains no statements).
             if (catchBlock.getStatementCount() == 0) {
                 // Empty block: log a warning that the exception is ignored.
-                logMessageText = String.format("%s - exception ignored", this.methodSignature);
-                logStatementText = String.format("logger.warn(\"%s\", %s);", logMessageText, exceptionName);
+                logStatementText = String.format("logger.warn(\"%s - exception ignored\", %s);", this.methodSignature, exceptionName);
             } else {
                 // Block has statements: log an error.
-                logMessageText = this.methodSignature;
-                logStatementText = String.format("logger.error(\"%s\", %s);", logMessageText, exceptionName);
+                logStatementText = String.format("logger.error(\"%s - caught exception\", %s);", this.methodSignature, exceptionName);
             }
 
-            // Avoid adding a duplicate — check by message content rather than exact statement text.
-            if (!catchBlock.getText().contains(logMessageText)) {
-                final PsiStatement logStatement = factory.createStatementFromText(logStatementText, catchBlock);
-                // Add the log statement as the first line inside the catch block.
-                catchBlock.addAfter(logStatement, catchBlock.getLBrace());
+            // Avoid adding a duplicate — check for the presence of a logger call referencing the exception variable.
+            final String catchBlockText = catchBlock.getText();
+            if (catchBlockText.contains("logger.warn(") || catchBlockText.contains("logger.error(")) {
+                // A logger statement already exists in this catch block — skip
+                continue;
             }
+
+            final PsiStatement logStatement = factory.createStatementFromText(logStatementText, catchBlock);
+            // Add the log statement as the first line inside the catch block.
+            catchBlock.addAfter(logStatement, catchBlock.getLBrace());
         }
     }
 
@@ -131,5 +136,24 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
                 .collect(Collectors.joining(","));
 
         return String.format("%s(%s)", methodName, parameterTypes);
+    }
+
+    /**
+     * Checks whether a return statement belongs directly to the given method,
+     * as opposed to a nested lambda expression or anonymous class.
+     */
+    private boolean belongsDirectlyToMethod(PsiReturnStatement returnStatement, PsiMethod method) {
+        PsiElement parent = returnStatement.getParent();
+        while (parent != null) {
+            if (parent == method) {
+                return true;
+            }
+            // If we hit a lambda or anonymous class before reaching the method, it's nested
+            if (parent instanceof PsiLambdaExpression || parent instanceof PsiClass) {
+                return false;
+            }
+            parent = parent.getParent();
+        }
+        return false;
     }
 }

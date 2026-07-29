@@ -59,14 +59,19 @@ public class ReapplyMethodLoggingVisitor extends JavaRecursiveElementVisitor {
             return false;
         }
 
-        // Check the qualifier resolves to a field named "logger"
+        // Check the qualifier is named "logger"
         String qualifierName = qualifierRef.getReferenceName();
         if (!"logger".equals(qualifierName)) {
             return false;
         }
 
-        // Optionally verify it resolves to a field (not a local variable with the same name)
+        // Try to verify it resolves to a field. If resolution fails (unresolved symbols,
+        // indexing incomplete), fall back to accepting name-based match.
         PsiElement resolved = qualifierRef.resolve();
+        if (resolved == null) {
+            // Cannot resolve — accept based on name match alone
+            return true;
+        }
         return resolved instanceof PsiField;
     }
 

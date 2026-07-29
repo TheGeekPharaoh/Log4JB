@@ -27,7 +27,8 @@ import java.util.stream.Collectors;
  */
 public class GenericLogAction extends AnAction {
 
-    private static final String baseTemplate = "if(%s.is%sEnabled()) {\n\t%s.%s(\"%s%s%s\"%s);\n}\n";
+    private static final String guardedTemplate = "if(%s.is%sEnabled()) {\n\t%s.%s(\"%s%s%s\"%s);\n}\n";
+    private static final String unguardedTemplate = "%s.%s(\"%s%s%s\"%s);\n";
     private static final String loggerObjectName = "logger";
 
     @Override
@@ -150,7 +151,15 @@ public class GenericLogAction extends AnAction {
                 logModel.getSelectedMethodParameters()
         );
 
-        return baseTemplate.formatted(
+        // ERROR level doesn't need a guard — it's virtually never disabled
+        if ("error".equals(logLevelOperation)) {
+            return unguardedTemplate.formatted(
+                    loggerObjectName, logLevelOperation,
+                    methodDeclaration, logMessage, variableLogStatement, variableLogValues
+            );
+        }
+
+        return guardedTemplate.formatted(
                 loggerObjectName, capitalizeFirstLetter(logLevelOperation),
                 loggerObjectName, logLevelOperation,
                 methodDeclaration, logMessage, variableLogStatement, variableLogValues
@@ -207,10 +216,12 @@ public class GenericLogAction extends AnAction {
 
     /**
      * Returns the SLF4J method name corresponding to the given log level.
+     * Note: SLF4J has no fatal() method, so FATAL maps to error().
      */
     protected String getLogLevelOperation(String logLevel) {
         return switch (logLevel) {
-            case "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "TRACE" -> logLevel.toLowerCase();
+            case "DEBUG", "INFO", "WARN", "ERROR", "TRACE" -> logLevel.toLowerCase();
+            case "FATAL" -> "error";
             default -> "debug";
         };
     }

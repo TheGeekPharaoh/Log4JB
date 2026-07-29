@@ -136,7 +136,7 @@ public class LogMethodVisitorTest extends LightJavaCodeInsightFixtureTestCase {
 
         String bodyText = method.getBody().getText();
         assertTrue("Should add error logging in catch block",
-                bodyText.contains("logger.error(\"riskyMethod()\""));
+                bodyText.contains("logger.error(\"riskyMethod() - caught exception\""));
     }
 
     public void testEmptyCatchBlockGetsWarning() {
