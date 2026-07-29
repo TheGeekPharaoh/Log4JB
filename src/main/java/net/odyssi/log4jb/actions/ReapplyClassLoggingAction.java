@@ -49,7 +49,7 @@ public class ReapplyClassLoggingAction extends AnAction {
         final var psiClass = PsiTreeUtil.getParentOfType(elementAt, PsiClass.class);
 
         if (psiClass != null) {
-            WriteCommandAction.runWriteCommandAction(psiClass.getProject(), () -> {
+            WriteCommandAction.runWriteCommandAction(psiClass.getProject(), "Log4JB: Reapply Class Logging", null, () -> {
                 // 1. Ensure the logger is declared in the class.
                 psiClass.accept(new DeclareLoggerVisitor(psiClass));
 

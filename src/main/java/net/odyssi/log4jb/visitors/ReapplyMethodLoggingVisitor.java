@@ -2,7 +2,6 @@ package net.odyssi.log4jb.visitors;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
-import com.intellij.psi.util.PsiTypesUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -44,13 +43,31 @@ public class ReapplyMethodLoggingVisitor extends JavaRecursiveElementVisitor {
     }
 
     /**
-     * Checks if a method call is a recognized logging method.
+     * Checks if a method call is a recognized logging method invoked on the "logger" field.
+     * This verifies both the method name (debug, info, etc.) and that the qualifier
+     * is the "logger" identifier, preventing false positives on unrelated methods.
      */
     private boolean isLoggerCall(PsiMethodCallExpression call) {
         String methodName = call.getMethodExpression().getReferenceName();
-        return LOG_METHODS.contains(methodName);
-        // For a more robust check, you could resolve the method and check if the
-        // containing class is a known logger class (e.g., org.slf4j.Logger).
+        if (!LOG_METHODS.contains(methodName)) {
+            return false;
+        }
+
+        // Verify the receiver is the "logger" field
+        PsiExpression qualifier = call.getMethodExpression().getQualifierExpression();
+        if (!(qualifier instanceof PsiReferenceExpression qualifierRef)) {
+            return false;
+        }
+
+        // Check the qualifier resolves to a field named "logger"
+        String qualifierName = qualifierRef.getReferenceName();
+        if (!"logger".equals(qualifierName)) {
+            return false;
+        }
+
+        // Optionally verify it resolves to a field (not a local variable with the same name)
+        PsiElement resolved = qualifierRef.resolve();
+        return resolved instanceof PsiField;
     }
 
     /**

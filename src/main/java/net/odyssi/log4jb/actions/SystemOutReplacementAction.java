@@ -8,7 +8,6 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiMethod;
@@ -47,15 +46,15 @@ public class SystemOutReplacementAction extends AnAction {
         }
 
         // Perform PSI analysis on a background thread to keep the UI responsive.
-        ReadAction.nonBlocking(() -> PsiTreeUtil.getParentOfType(psiFile.findElementAt(editor.getCaretModel().getOffset()), PsiClass.class))
-                .finishOnUiThread(ModalityState.defaultModalityState(), psiClass -> {
+        ReadAction.nonBlocking(() -> PsiTreeUtil.getParentOfType(psiFile.findElementAt(editor.getCaretModel().getOffset()), PsiMethod.class))
+                .finishOnUiThread(ModalityState.defaultModalityState(), psiMethod -> {
                     // This block runs on the EDT after the analysis is complete.
-                    if (psiClass != null) {
-                        WriteCommandAction.runWriteCommandAction(psiClass.getProject(), () -> {
+                    if (psiMethod != null && psiMethod.getContainingClass() != null) {
+                        WriteCommandAction.runWriteCommandAction(psiMethod.getProject(), "Log4JB: Replace System.out.println()", null, () -> {
                             // 1. Ensure the logger is declared.
-                            psiClass.accept(new DeclareLoggerVisitor(psiClass));
-                            // 2. Run the replacement visitor on the class.
-                            psiClass.accept(new SystemOutReplacementVisitor());
+                            psiMethod.getContainingClass().accept(new DeclareLoggerVisitor(psiMethod.getContainingClass()));
+                            // 2. Run the replacement visitor on the current method.
+                            psiMethod.accept(new SystemOutReplacementVisitor());
                         });
                     }
                 })

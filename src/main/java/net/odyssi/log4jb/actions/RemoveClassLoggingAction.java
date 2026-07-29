@@ -52,13 +52,13 @@ public class RemoveClassLoggingAction extends AnAction {
                         // Display a confirmation dialog before performing the destructive action.
                         int result = Messages.showYesNoDialog(
                                 psiClass.getProject(),
-                                "Are you sure you want to remove all logging from the class '" + psiClass.getName() + "'?\nThis operation cannot be undone.",
+                                "Are you sure you want to remove all logging from the class '" + psiClass.getName() + "'?",
                                 "Confirm Logging Removal",
                                 Messages.getQuestionIcon()
                         );
 
                         if (result == Messages.YES) {
-                            WriteCommandAction.runWriteCommandAction(psiClass.getProject(), () ->
+                            WriteCommandAction.runWriteCommandAction(psiClass.getProject(), "Log4JB: Remove Class Logging", null, () ->
                                     psiClass.accept(new RemoveLoggingVisitor()));
                         }
                     }

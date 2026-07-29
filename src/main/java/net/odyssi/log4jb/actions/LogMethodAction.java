@@ -48,7 +48,7 @@ public class LogMethodAction extends AnAction {
         final var containingClass = (psiMethod != null) ? psiMethod.getContainingClass() : null;
 
         if (psiMethod != null && containingClass != null) {
-            WriteCommandAction.runWriteCommandAction(psiMethod.getProject(), () -> {
+            WriteCommandAction.runWriteCommandAction(psiMethod.getProject(), "Log4JB: Log Method", null, () -> {
                 // First, ensure the logger is declared.
                 containingClass.accept(new DeclareLoggerVisitor(containingClass));
                 // Then, instrument the method.

@@ -48,7 +48,7 @@ public class SystemErrReplacementAction extends AnAction {
         ReadAction.nonBlocking(() -> PsiTreeUtil.getParentOfType(psiFile.findElementAt(editor.getCaretModel().getOffset()), PsiMethod.class))
                 .finishOnUiThread(ModalityState.defaultModalityState(), psiMethod -> {
                     if (psiMethod != null && psiMethod.getContainingClass() != null) {
-                        WriteCommandAction.runWriteCommandAction(psiMethod.getProject(), () -> {
+                        WriteCommandAction.runWriteCommandAction(psiMethod.getProject(), "Log4JB: Replace System.err.println()", null, () -> {
                             psiMethod.getContainingClass().accept(new DeclareLoggerVisitor(psiMethod.getContainingClass()));
                             psiMethod.accept(new SystemErrReplacementVisitor());
                         });

@@ -64,7 +64,7 @@ public class ReapplyMethodLoggingAction extends AnAction {
         }
 
         // Execute the visitor in a write-safe context
-        WriteCommandAction.runWriteCommandAction(project, () -> {
+        WriteCommandAction.runWriteCommandAction(project, "Log4JB: Reapply Method Logging", null, () -> {
             // First, ensure the logger is declared.
             psiClass.accept(new DeclareLoggerVisitor(psiClass));
             psiClass.accept(new ReapplyMethodLoggingVisitor(project));

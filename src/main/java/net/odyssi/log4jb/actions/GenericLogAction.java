@@ -1,10 +1,10 @@
 package net.odyssi.log4jb.actions;
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.command.WriteCommandAction;
-import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
@@ -12,119 +12,96 @@ import com.intellij.psi.util.PsiTreeUtil;
 import net.odyssi.log4jb.actions.dialogs.GenericLogFormDialog;
 import net.odyssi.log4jb.actions.dialogs.forms.GenericLogModel;
 import net.odyssi.log4jb.visitors.DeclareLoggerVisitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Generates a user-defined log statement at the selected location
+ * Generates a user-defined log statement at the selected location.
  *
  * @author sdnakhla
  */
 public class GenericLogAction extends AnAction {
 
-    private static final String baseTemplate = "if(%s.is%sEnabled()) {\n	%s.%s(\"%s %s%s\"%s);\n}\n";
+    private static final String baseTemplate = "if(%s.is%sEnabled()) {\n\t%s.%s(\"%s%s%s\"%s);\n}\n";
     private static final String loggerObjectName = "logger";
 
-    /**
-     * Returns the {@link PsiMethod} the cursor is currently in
-     *
-     * @param project The project
-     * @param editor  The editor
-     * @return The selected method, if applicable
-     */
-    public PsiMethod getSelectedCursorMethod(Project project, Editor editor) {
-        PsiFile file = PsiManager.getInstance(project).findFile(editor.getVirtualFile());
-
-        if (file == null) {
-            return null;
-        }
-
-        // Get the offset of the cursor
-        int offset = editor.getCaretModel().getOffset();
-
-        // Find the element at the cursor position
-        PsiElement element = file.getViewProvider().findElementAt(offset);
-
-        // If not, try to find the parent PsiMethod
-        PsiElement parent = element;
-        while ((parent = parent.getParent()) != null) {
-            if (parent instanceof PsiMethod) {
-                return (PsiMethod) parent;
-            }
-        }
-
-        return null;
+    @Override
+    public void update(@NotNull AnActionEvent e) {
+        // This action is enabled only if the cursor is inside a Java method.
+        boolean isEnabled = isJavaMethodSelected(e);
+        e.getPresentation().setEnabledAndVisible(isEnabled);
     }
 
-    /**
-     * Returns the {@link PsiClass} the cursor is currently in
-     *
-     * @param project The project
-     * @param editor  The editor
-     * @return The selected class, if applicable
-     */
-    public PsiClass getSelectedCursorClass(Project project, Editor editor) {
-        PsiFile file = PsiManager.getInstance(project).findFile(editor.getVirtualFile());
+    private boolean isJavaMethodSelected(AnActionEvent e) {
+        final var editor = e.getData(CommonDataKeys.EDITOR);
+        final var psiFile = e.getData(CommonDataKeys.PSI_FILE);
 
-        if (file == null) {
-            return null;
+        if (psiFile instanceof PsiJavaFile && editor != null) {
+            final var elementAt = psiFile.findElementAt(editor.getCaretModel().getOffset());
+            return PsiTreeUtil.getParentOfType(elementAt, PsiMethod.class) != null;
         }
-
-        // Get the offset of the cursor
-        int offset = editor.getCaretModel().getOffset();
-
-        // Find the element at the cursor position
-        PsiElement element = file.getViewProvider().findElementAt(offset);
-
-        // If not, try to find the parent PsiClass
-        PsiElement parent = element;
-        while ((parent = parent.getParent()) != null) {
-            if (parent instanceof PsiClass) {
-                return (PsiClass) parent;
-            }
-        }
-
-        return null;
+        return false;
     }
 
     @Override
-    public void actionPerformed(AnActionEvent e) {
-        Project proj = e.getProject();
-        Editor editor = e.getData(CommonDataKeys.EDITOR);
-        PsiClass selectedClass = getSelectedCursorClass(proj, editor);
-        PsiFile psiFile = PsiDocumentManager.getInstance(proj).getPsiFile(editor.getDocument());
+    public void actionPerformed(@NotNull AnActionEvent e) {
+        final Project project = e.getProject();
+        final Editor editor = e.getData(CommonDataKeys.EDITOR);
+        final PsiFile psiFile = e.getData(CommonDataKeys.PSI_FILE);
+        if (project == null || editor == null || !(psiFile instanceof PsiJavaFile)) {
+            return;
+        }
 
-        GenericLogFormDialog dialog = new GenericLogFormDialog(proj, getClassVariables(editor), getLocalVariables(editor), getMethodParameters(editor));
+        final int offset = editor.getCaretModel().getOffset();
+        final PsiElement elementAt = psiFile.findElementAt(offset);
+        final PsiClass selectedClass = PsiTreeUtil.getParentOfType(elementAt, PsiClass.class);
+        final PsiMethod selectedMethod = PsiTreeUtil.getParentOfType(elementAt, PsiMethod.class);
 
-        if (dialog.showAndGet() && psiFile instanceof PsiJavaFile) {
+        if (selectedClass == null || selectedMethod == null) {
+            return;
+        }
+
+        GenericLogFormDialog dialog = new GenericLogFormDialog(
+                project,
+                getClassVariables(psiFile, offset),
+                getLocalVariables(psiFile, offset),
+                getMethodParameters(psiFile, offset)
+        );
+
+        if (dialog.showAndGet()) {
             GenericLogModel logModel = dialog.buildLogModel();
-            WriteCommandAction.runWriteCommandAction(proj, () -> {
+            WriteCommandAction.runWriteCommandAction(project, "Log4JB: Insert Log Statement", null, () -> {
                 // First, ensure the logger is declared.
                 selectedClass.accept(new DeclareLoggerVisitor(selectedClass));
 
-                this.applyLogStatements(logModel, proj, editor);
+                // Build and insert the log statement.
+                applyLogStatements(logModel, selectedMethod, project, editor);
             });
         }
     }
 
     /**
-     * Applies the logging as defined in the {@link GenericLogModel}
+     * Applies the logging as defined in the {@link GenericLogModel}.
      *
-     * @param logModel The log model
-     * @param project  The project
-     * @param editor   The editor
+     * @param logModel       The log model
+     * @param selectedMethod The method the cursor is inside
+     * @param project        The project
+     * @param editor         The editor
      */
-    protected void applyLogStatements(GenericLogModel logModel, Project project, Editor editor) {
-        String logStatementStr = this.buildLogStatement(logModel, project, editor);
+    protected void applyLogStatements(GenericLogModel logModel, PsiMethod selectedMethod, Project project, Editor editor) {
+        final PsiClass containingClass = selectedMethod.getContainingClass();
+        if (containingClass == null) {
+            return;
+        }
 
-        PsiMethod selectedMethod = getSelectedCursorMethod(project, editor);
-        PsiStatement logStatement = this.createExpressionStatement(selectedMethod.getContainingClass(), logStatementStr);
+        String logStatementStr = buildLogStatement(logModel, selectedMethod);
+        PsiElementFactory factory = JavaPsiFacade.getElementFactory(project);
+        PsiStatement logStatement = factory.createStatementFromText(logStatementStr, null);
 
         PsiFile file = selectedMethod.getContainingFile();
         int caretOffset = editor.getCaretModel().getOffset();
@@ -137,57 +114,53 @@ public class GenericLogAction extends AnAction {
         int lineStartOffset = editor.getDocument().getLineStartOffset(line);
         PsiElement anchorElement = file.findElementAt(lineStartOffset);
 
-        // Check if the anchor element is valid
+        // Insert the log statement at the appropriate location
         if (anchorElement != null) {
             PsiElement anchorParent = anchorElement.getParent();
             if (anchorParent != null) {
-                // Add the log statement after the anchor element
                 anchorParent.addAfter(logStatement, anchorElement);
             } else {
-                // Handle the case where the anchor element has no parent
                 file.add(logStatement);
             }
         } else {
-            // Handle the case where the anchor element is null
             file.add(logStatement);
         }
     }
 
     /**
-     * Creates a new {@link PsiStatement} from the given statement text
+     * Builds the log statement as defined in the {@link GenericLogModel}.
      *
-     * @param psiClass      The PSI class
-     * @param statementText The statement text
-     * @return The statement
+     * @param logModel       The log model
+     * @param selectedMethod The method the cursor is inside
+     * @return The log statement text
      */
-    public PsiStatement createExpressionStatement(PsiClass psiClass, String statementText) {
-        PsiElementFactory factory = JavaPsiFacade.getElementFactory(psiClass.getProject());
-        PsiStatement statement = factory.createStatementFromText(statementText, null);
+    protected String buildLogStatement(GenericLogModel logModel, PsiMethod selectedMethod) {
+        String methodDeclaration = getMethodDeclaration(selectedMethod);
+        String logLevelOperation = getLogLevelOperation(logModel.getLogLevel());
+        String logMessage = (logModel.getLogMessage() != null && !logModel.getLogMessage().isEmpty())
+                ? " - " + logModel.getLogMessage() : "";
+        String variableLogStatement = getVariableLogStatement(
+                logModel.getSelectedGlobalVariables(),
+                logModel.getSelectedLocalVariables(),
+                logModel.getSelectedMethodParameters()
+        );
+        String variableLogValues = getVariableLogValuesStatement(
+                logModel.getSelectedGlobalVariables(),
+                logModel.getSelectedLocalVariables(),
+                logModel.getSelectedMethodParameters()
+        );
 
-        return statement;
+        return baseTemplate.formatted(
+                loggerObjectName, capitalizeFirstLetter(logLevelOperation),
+                loggerObjectName, logLevelOperation,
+                methodDeclaration, logMessage, variableLogStatement, variableLogValues
+        );
     }
 
     /**
-     * Builds the log statement as defined in the {@link GenericLogModel}
-     * @param logModel The log model
-     * @param project The project
-     * @param editor The editor
-     * @return The log statement
+     * Builds the method signature string for use in log messages.
+     * Example: "myMethod(String,int)"
      */
-    protected String buildLogStatement(GenericLogModel logModel, Project project, Editor editor) {
-        PsiMethod selectedMethod = getSelectedCursorMethod(project, editor);
-        String methodDeclaration = getMethodDeclaration(selectedMethod);
-        String logLevelOperation = getLogLevelOperation(logModel.getLogLevel());
-        String logMessage = (logModel.getLogMessage() != null && logModel.getLogMessage().length() > 0) ? " - " + logModel.getLogMessage() : "";
-        String variableLogStatement = getVariableLogStatement(logModel.getSelectedGlobalVariables(), logModel.getSelectedLocalVariables(), logModel.getSelectedMethodParameters());
-        String variableLogValues = getVariableLogValuesStatement(logModel.getSelectedGlobalVariables(), logModel.getSelectedLocalVariables(), logModel.getSelectedMethodParameters());
-
-        String logStatementStr = baseTemplate.formatted(loggerObjectName, capitalizeFirstLetter(logLevelOperation), loggerObjectName, logLevelOperation, methodDeclaration, logMessage, variableLogStatement, variableLogValues);
-        System.out.println("logStatementStr=" + logStatementStr);
-
-        return logStatementStr;
-    }
-
     public String getMethodDeclaration(PsiMethod method) {
         final var methodName = method.getName();
         final var parameterTypes = Arrays.stream(method.getParameterList().getParameters())
@@ -199,217 +172,132 @@ public class GenericLogAction extends AnAction {
     }
 
     /**
-     * Builds a log statement from the given variables
-     * @param globalVariables The global variables
-     * @param localVariables The local variables
-     * @param methodParameters The method parameters
-     * @return The log statement
+     * Builds the variable placeholder portion of a log message.
+     * Example: " - name={}, age={}"
      */
     protected String getVariableLogStatement(Set<String> globalVariables, Set<String> localVariables, Set<String> methodParameters) {
-        String s = null;
-        if (globalVariables.size() == 0 && localVariables.size() == 0 && methodParameters.size() == 0) {
-            s = "";
-        } else {
-            Set<String> combinedVariables = new LinkedHashSet<>();
-            combinedVariables.addAll(globalVariables);
-            combinedVariables.addAll(localVariables);
-            combinedVariables.addAll(methodParameters);
-
-            s = " - " + combinedVariables.stream().collect(Collectors.joining("={}, ")) + "={}";
+        if (globalVariables.isEmpty() && localVariables.isEmpty() && methodParameters.isEmpty()) {
+            return "";
         }
 
-        return s;
+        Set<String> combinedVariables = new LinkedHashSet<>();
+        combinedVariables.addAll(globalVariables);
+        combinedVariables.addAll(localVariables);
+        combinedVariables.addAll(methodParameters);
+
+        return " - " + combinedVariables.stream().collect(Collectors.joining("={}, ")) + "={}";
     }
 
     /**
-     * Builds a log value statement from the given variables
-     * @param globalVariables The global variables
-     * @param localVariables The local variables
-     * @param methodParameters The method parameters
-     * @return The log statement
+     * Builds the variable values portion of a log statement.
+     * Example: ", name, age"
      */
     protected String getVariableLogValuesStatement(Set<String> globalVariables, Set<String> localVariables, Set<String> methodParameters) {
-        String s = null;
-        if (globalVariables.size() == 0 && localVariables.size() == 0 && methodParameters.size() == 0) {
-            s = "";
-        } else {
-            Set<String> combinedVariables = new LinkedHashSet<>();
-            combinedVariables.addAll(globalVariables);
-            combinedVariables.addAll(localVariables);
-            combinedVariables.addAll(methodParameters);
-
-            s = ", " + combinedVariables.stream().collect(Collectors.joining(", "));
+        if (globalVariables.isEmpty() && localVariables.isEmpty() && methodParameters.isEmpty()) {
+            return "";
         }
 
-        return s;
+        Set<String> combinedVariables = new LinkedHashSet<>();
+        combinedVariables.addAll(globalVariables);
+        combinedVariables.addAll(localVariables);
+        combinedVariables.addAll(methodParameters);
+
+        return ", " + String.join(", ", combinedVariables);
     }
 
     /**
-     * Returns the operation corresponding to the given log level value
-     *
-     * @param logLevel The log level
-     * @return The operation
+     * Returns the SLF4J method name corresponding to the given log level.
      */
     protected String getLogLevelOperation(String logLevel) {
-        String s = null;
-        switch (logLevel) {
-            case "DEBUG":
-            case "INFO":
-            case "WARN":
-            case "ERROR":
-            case "FATAL":
-            case "TRACE":
-                s = logLevel.toLowerCase();
-                break;
-            default:
-                s = "debug";
-                break;
-        }
-
-        return s;
+        return switch (logLevel) {
+            case "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "TRACE" -> logLevel.toLowerCase();
+            default -> "debug";
+        };
     }
 
     private String capitalizeFirstLetter(String str) {
         if (str == null || str.isEmpty()) {
             return str;
         }
-
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
     /**
-     * Returns the parameter information for the method the caret is currently in
+     * Returns the parameter information for the method the caret is currently in.
      *
-     * @param editor The editor
-     * @return The method parameters
+     * @param psiFile The PSI file
+     * @param offset  The caret offset
+     * @return The method parameters as name/type pairs
      */
-    protected Set<String[]> getMethodParameters(Editor editor) {
-        Caret caret = editor.getCaretModel().getPrimaryCaret();
-
-        // Get the current project
-        Project project = editor.getProject();
-
-        // Get the PSI file
-        PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
-
-        // Get the PSI element at the caret position
-        PsiElement element = psiFile.findElementAt(caret.getOffset());
-
-        // Find the parent PsiMethod element
-        PsiMethod method = PsiTreeUtil.getParentOfType(element, PsiMethod.class);
+    protected Set<String[]> getMethodParameters(PsiFile psiFile, int offset) {
+        final PsiElement element = psiFile.findElementAt(offset);
+        final PsiMethod method = PsiTreeUtil.getParentOfType(element, PsiMethod.class);
 
         if (method != null) {
-            // Get the method parameters
-            PsiParameterList parameterList = method.getParameterList();
-            PsiParameter[] parameters = parameterList.getParameters();
-
-            // Create a set to store the parameter information
-            Set<String[]> parameterInfo = new HashSet<>();
-
-            // Iterate over the parameters and extract the name and type
-            for (PsiParameter parameter : parameters) {
-                String paramName = parameter.getName();
-                String paramType = parameter.getType().getCanonicalText();
-
-                parameterInfo.add(new String[]{paramName, paramType});
+            Set<String[]> parameterInfo = new LinkedHashSet<>();
+            for (PsiParameter parameter : method.getParameterList().getParameters()) {
+                parameterInfo.add(new String[]{parameter.getName(), parameter.getType().getPresentableText()});
             }
-
             return parameterInfo;
         }
 
-        // If no parent PsiMethod element is found, return an empty set
-        return new HashSet<>();
+        return new LinkedHashSet<>();
     }
 
     /**
-     * Returns the variable information for the current class
+     * Returns the field information for the current class.
      *
-     * @param editor The editor
-     * @return The variables
+     * @param psiFile The PSI file
+     * @param offset  The caret offset
+     * @return The class fields as name/type pairs
      */
-    protected Set<String[]> getClassVariables(Editor editor) {
-        Caret caret = editor.getCaretModel().getPrimaryCaret();
-
-        // Get the current project
-        Project project = editor.getProject();
-
-        // Get the PSI file
-        PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
-
-        // Get the PSI element at the caret position
-        PsiElement element = psiFile.findElementAt(caret.getOffset());
-
-        // Find the parent PsiClass element
-        PsiClass clazz = PsiTreeUtil.getParentOfType(element, PsiClass.class);
+    protected Set<String[]> getClassVariables(PsiFile psiFile, int offset) {
+        final PsiElement element = psiFile.findElementAt(offset);
+        final PsiClass clazz = PsiTreeUtil.getParentOfType(element, PsiClass.class);
 
         if (clazz != null) {
-            // Get the class fields
-            PsiField[] fields = clazz.getFields();
-
-            // Create a set to store the field information
-            Set<String[]> fieldInfo = new HashSet<>();
-
-            // Iterate over the fields and extract the name and type
-            for (PsiField field : fields) {
-                String fieldName = field.getName();
-                String fieldType = field.getType().getCanonicalText();
-
-                fieldInfo.add(new String[]{fieldName, fieldType});
+            Set<String[]> fieldInfo = new LinkedHashSet<>();
+            for (PsiField field : clazz.getFields()) {
+                fieldInfo.add(new String[]{field.getName(), field.getType().getPresentableText()});
             }
-
             return fieldInfo;
         }
 
-        // If no parent PsiClass element is found, return an empty set
-        return new HashSet<>();
+        return new LinkedHashSet<>();
     }
 
     /**
-     * Returns the local variables that are declared before the cursor position
+     * Returns the local variables declared before the cursor position, including
+     * variables in nested scopes (for loops, if blocks, etc.).
      *
-     * @param editor The editor
-     * @return The variable information
+     * @param psiFile The PSI file
+     * @param offset  The caret offset
+     * @return The local variable information as name/type pairs
      */
-    protected Set<String[]> getLocalVariables(Editor editor) {
-        Caret caret = editor.getCaretModel().getPrimaryCaret();
+    protected Set<String[]> getLocalVariables(PsiFile psiFile, int offset) {
+        final PsiElement element = psiFile.findElementAt(offset);
+        final PsiMethod method = PsiTreeUtil.getParentOfType(element, PsiMethod.class);
 
-        // Get the current project
-        Project project = editor.getProject();
-
-        // Get the PSI file
-        PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
-
-        // Get the PSI element at the caret position
-        PsiElement element = psiFile.findElementAt(caret.getOffset());
-
-        // Find the parent PsiMethod element
-        PsiMethod method = PsiTreeUtil.getParentOfType(element, PsiMethod.class);
-
-        if (method != null) {
-            // Create a set to store the local variable information
-            Set<String[]> variableInfo = new HashSet<>();
-
-            // Iterate over all elements within the method body
-            for (PsiElement child : method.getBody().getChildren()) {
-                // Check if the element is a declaration statement
-                if (child instanceof PsiDeclarationStatement statement) {
-                    // Check if the declaration statement has a local variable declaration
-                    PsiElement declaration = statement.getDeclaredElements()[0];
-                    if (declaration instanceof PsiLocalVariable variable) {
-                        // Check if the variable declaration is before the caret
-                        if (variable.getTextRange().getStartOffset() < caret.getOffset()) {
-                            String variableName = variable.getName();
-                            String variableType = variable.getType().getCanonicalText();
-
-                            variableInfo.add(new String[]{variableName, variableType});
-                        }
-                    }
-                }
-            }
-
-            return variableInfo;
+        if (method == null || method.getBody() == null) {
+            return new LinkedHashSet<>();
         }
 
-        return new HashSet<>();
+        Set<String[]> variableInfo = new LinkedHashSet<>();
+
+        // Use PsiTreeUtil to find all local variables in the method body, including nested scopes
+        Collection<PsiLocalVariable> allLocalVariables = PsiTreeUtil.findChildrenOfType(method.getBody(), PsiLocalVariable.class);
+        for (PsiLocalVariable variable : allLocalVariables) {
+            // Only include variables declared before the caret position
+            if (variable.getTextRange().getStartOffset() < offset) {
+                variableInfo.add(new String[]{variable.getName(), variable.getType().getPresentableText()});
+            }
+        }
+
+        return variableInfo;
+    }
+
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT;
     }
 }

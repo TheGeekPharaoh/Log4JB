@@ -44,7 +44,7 @@ public class LogSelectedVariableAction extends AnAction {
                 .finishOnUiThread(ModalityState.defaultModalityState(), context -> {
                     // This block runs on the EDT after the analysis is complete.
                     if (context.isValid()) {
-                        WriteCommandAction.runWriteCommandAction(context.method.getProject(), () -> {
+                        WriteCommandAction.runWriteCommandAction(context.method.getProject(), "Log4JB: Log Variable", null, () -> {
                             final PsiClass containingClass = context.method.getContainingClass();
                             if (containingClass == null) return;
 

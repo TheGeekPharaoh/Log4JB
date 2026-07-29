@@ -58,7 +58,7 @@ public class DeclareLoggerAction extends AnAction {
                     // This block runs on the EDT after the background task is complete.
                     // It's now safe to perform the write action.
                     if (psiClass != null) {
-                        WriteCommandAction.runWriteCommandAction(psiClass.getProject(), () ->
+                        WriteCommandAction.runWriteCommandAction(psiClass.getProject(), "Log4JB: Declare Logger", null, () ->
                                 psiClass.accept(new DeclareLoggerVisitor(psiClass)));
                     }
                 })
