@@ -30,6 +30,14 @@ public class DeclareLoggerVisitor extends JavaRecursiveElementVisitor {
             return;
         }
 
+        // Also check if any field is typed as org.slf4j.Logger to avoid duplicates
+        // when the logger field has a non-standard name (e.g., LOG, LOGGER).
+        for (PsiField field : aClass.getFields()) {
+            if ("org.slf4j.Logger".equals(field.getType().getCanonicalText())) {
+                return;
+            }
+        }
+
         final var project = aClass.getProject();
         final var factory = JavaPsiFacade.getElementFactory(project);
         final var codeStyleManager = JavaCodeStyleManager.getInstance(project);

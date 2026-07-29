@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "net.odyssi"
-version = "0.5.1"
+version = "0.6.0"
 
 repositories {
     mavenCentral()
@@ -38,7 +38,16 @@ intellijPlatform {
         }
 
         changeNotes = """
-      Initial version
+      What's new in Log4JB v0.6.0:
+      <ul>
+        <li>Fixed duplicate log statements being inserted when "Log This Method" or "Log This Class" is invoked multiple times on the same method</li>
+        <li>Improved logger declaration to detect existing SLF4J logger fields regardless of field name</li>
+        <li>Hardened "Reapply Logging" to only modify statements on the actual logger field</li>
+        <li>All actions now register named undo commands for clearer Edit > Undo entries</li>
+        <li>Fixed "Log at this position..." action visibility and null-safety</li>
+        <li>Local variable detection now includes variables declared in nested scopes</li>
+        <li>Removed erroneous debug output from generic log action</li>
+      </ul>
     """.trimIndent()
     }
 }

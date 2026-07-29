@@ -40,9 +40,9 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
         final var factory = JavaPsiFacade.getElementFactory(method.getProject());
         final var bodyText = body.getText();
 
-        // 1. Add "start" log statement
+        // 1. Add "start" log statement (check by message content, not exact statement text)
         final var startLogStatementText = String.format("if(logger.isDebugEnabled()) { logger.debug(\"%s\"); }", startMessage);
-        if (!bodyText.contains(startLogStatementText)) {
+        if (!bodyText.contains(startMessage)) {
             final var startLogStatement = factory.createStatementFromText(startLogStatementText, method);
             body.addAfter(startLogStatement, body.getLBrace());
         }
@@ -51,8 +51,9 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
         final var endLogStatementText = String.format("if(logger.isDebugEnabled()) { logger.debug(\"%s\"); }", endMessage);
         final var returnStatements = PsiTreeUtil.findChildrenOfType(body, PsiReturnStatement.class);
         for (PsiReturnStatement returnStatement : returnStatements) {
+            // Check if the previous sibling already contains the end message
             final var prevStatement = PsiTreeUtil.getPrevSiblingOfType(returnStatement, PsiStatement.class);
-            if (prevStatement != null && prevStatement.getText().equals(endLogStatementText)) {
+            if (prevStatement != null && prevStatement.getText().contains(endMessage)) {
                 continue;
             }
             final var endLogStatement = factory.createStatementFromText(endLogStatementText, returnStatement);
@@ -60,13 +61,13 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
         }
 
         // 3. Add "end" log statement at the very end of the method if it can "fall through"
-        final var statements = body.getStatements();
-        if (statements.length == 0) {
-            addFinalEndLog(body, factory);
-        } else {
-            final var lastStatement = statements[statements.length - 1];
-            if (!(lastStatement instanceof PsiReturnStatement) && !(lastStatement instanceof PsiThrowStatement)) {
-                if (!lastStatement.getText().equals(endLogStatementText)) {
+        if (!bodyText.contains(endMessage)) {
+            final var statements = body.getStatements();
+            if (statements.length == 0) {
+                addFinalEndLog(body, factory);
+            } else {
+                final var lastStatement = statements[statements.length - 1];
+                if (!(lastStatement instanceof PsiReturnStatement) && !(lastStatement instanceof PsiThrowStatement)) {
                     addFinalEndLog(body, factory);
                 }
             }
@@ -86,20 +87,22 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
             }
 
             final String exceptionName = exceptionParameter.getName();
+            final String logMessageText;
             final String logStatementText;
 
             // Check if the catch block is empty (contains no statements).
             if (catchBlock.getStatementCount() == 0) {
                 // Empty block: log a warning that the exception is ignored.
-                final String message = String.format("%s - exception ignored", this.methodSignature);
-                logStatementText = String.format("logger.warn(\"%s\", %s);", message, exceptionName);
+                logMessageText = String.format("%s - exception ignored", this.methodSignature);
+                logStatementText = String.format("logger.warn(\"%s\", %s);", logMessageText, exceptionName);
             } else {
                 // Block has statements: log an error.
-                logStatementText = String.format("logger.error(\"%s\", %s);", this.methodSignature, exceptionName);
+                logMessageText = this.methodSignature;
+                logStatementText = String.format("logger.error(\"%s\", %s);", logMessageText, exceptionName);
             }
 
-            // Avoid adding a duplicate log statement.
-            if (!catchBlock.getText().contains(logStatementText)) {
+            // Avoid adding a duplicate — check by message content rather than exact statement text.
+            if (!catchBlock.getText().contains(logMessageText)) {
                 final PsiStatement logStatement = factory.createStatementFromText(logStatementText, catchBlock);
                 // Add the log statement as the first line inside the catch block.
                 catchBlock.addAfter(logStatement, catchBlock.getLBrace());
