@@ -33,8 +33,21 @@ public class DeclareLoggerVisitor extends JavaRecursiveElementVisitor {
         // Also check if any field is typed as org.slf4j.Logger to avoid duplicates
         // when the logger field has a non-standard name (e.g., LOG, LOGGER).
         for (PsiField field : aClass.getFields()) {
-            if ("org.slf4j.Logger".equals(field.getType().getCanonicalText())) {
+            String canonicalText = field.getType().getCanonicalText();
+            if ("org.slf4j.Logger".equals(canonicalText)) {
                 return;
+            }
+            // When the type cannot be fully resolved (e.g., in some environments),
+            // fall back to checking the simple name against the file's imports.
+            if ("Logger".equals(canonicalText)) {
+                PsiFile containingFile = aClass.getContainingFile();
+                if (containingFile instanceof PsiJavaFile javaFile) {
+                    for (PsiImportStatement importStatement : javaFile.getImportList().getImportStatements()) {
+                        if ("org.slf4j.Logger".equals(importStatement.getQualifiedName())) {
+                            return;
+                        }
+                    }
+                }
             }
         }
 

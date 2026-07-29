@@ -23,9 +23,12 @@ dependencies {
 
     compileOnly("org.slf4j:slf4j-api:2.0.13")
 
+    testImplementation("junit:junit:4.13.2")
+
     intellijPlatform {
         create("IC", "2025.1")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
+        testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Plugin.Java)
         bundledPlugin("com.intellij.java")
     }
 }
