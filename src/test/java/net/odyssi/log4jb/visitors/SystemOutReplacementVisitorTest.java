@@ -109,4 +109,58 @@ public class SystemOutReplacementVisitorTest extends LightJavaCodeInsightFixture
         assertTrue("System.err.println should remain unchanged",
                 bodyText.contains("System.err.println"));
     }
+
+    public void testReplacesSystemOutPrint() {
+        PsiClass psiClass = setupClassWithLogger(
+                "    public void doWork() {\n" +
+                "        System.out.print(\"partial\");\n" +
+                "    }"
+        );
+
+        PsiMethod method = psiClass.findMethodsByName("doWork", false)[0];
+
+        WriteCommandAction.runWriteCommandAction(getProject(), () ->
+                method.accept(new SystemOutReplacementVisitor()));
+
+        String bodyText = method.getBody().getText();
+        assertFalse("System.out.print should be removed", bodyText.contains("System.out.print"));
+        assertTrue("Should contain logger.debug", bodyText.contains("logger.debug"));
+        assertTrue("Should contain the message", bodyText.contains("partial"));
+    }
+
+    public void testReplacesNoArgPrintln() {
+        PsiClass psiClass = setupClassWithLogger(
+                "    public void doWork() {\n" +
+                "        System.out.println();\n" +
+                "    }"
+        );
+
+        PsiMethod method = psiClass.findMethodsByName("doWork", false)[0];
+
+        WriteCommandAction.runWriteCommandAction(getProject(), () ->
+                method.accept(new SystemOutReplacementVisitor()));
+
+        String bodyText = method.getBody().getText();
+        assertFalse("System.out.println() should be removed", bodyText.contains("System.out.println"));
+        assertTrue("Should contain logger.debug", bodyText.contains("logger.debug"));
+        assertTrue("Should contain empty line marker", bodyText.contains("(empty line)"));
+    }
+
+    public void testReplacesNumericLiteralAsParameter() {
+        PsiClass psiClass = setupClassWithLogger(
+                "    public void doWork() {\n" +
+                "        System.out.println(42);\n" +
+                "    }"
+        );
+
+        PsiMethod method = psiClass.findMethodsByName("doWork", false)[0];
+
+        WriteCommandAction.runWriteCommandAction(getProject(), () ->
+                method.accept(new SystemOutReplacementVisitor()));
+
+        String bodyText = method.getBody().getText();
+        assertFalse("System.out.println should be removed", bodyText.contains("System.out.println"));
+        assertTrue("Numeric literal should be a {} argument, not inlined",
+                bodyText.contains("{}") && bodyText.contains("42"));
+    }
 }

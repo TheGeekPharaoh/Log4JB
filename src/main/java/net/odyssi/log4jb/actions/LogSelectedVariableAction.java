@@ -11,12 +11,10 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.concurrency.AppExecutorUtil;
+import net.odyssi.log4jb.util.MethodSignatureBuilder;
 import net.odyssi.log4jb.visitors.DeclareLoggerVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 public class LogSelectedVariableAction extends AnAction {
 
@@ -52,7 +50,7 @@ public class LogSelectedVariableAction extends AnAction {
                             containingClass.accept(new DeclareLoggerVisitor(containingClass));
 
                             // 2. Build and insert the log statement.
-                            final String methodSignature = buildMethodSignature(context.method);
+                            final String methodSignature = MethodSignatureBuilder.build(context.method);
                             final String logStatementText = String.format(
                                     "if(logger.isDebugEnabled()) { logger.debug(\"%s - %s={}\", %s); }",
                                     methodSignature,
@@ -95,15 +93,6 @@ public class LogSelectedVariableAction extends AnAction {
             }
         }
         return null;
-    }
-
-    private String buildMethodSignature(PsiMethod method) {
-        final String methodName = method.getName();
-        final String parameterTypes = Arrays.stream(method.getParameterList().getParameters())
-                .map(PsiParameter::getType)
-                .map(PsiType::getPresentableText)
-                .collect(Collectors.joining(","));
-        return String.format("%s(%s)", methodName, parameterTypes);
     }
 
     @Override

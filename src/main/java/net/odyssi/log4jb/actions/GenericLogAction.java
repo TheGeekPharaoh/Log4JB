@@ -11,10 +11,12 @@ import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 import net.odyssi.log4jb.actions.dialogs.GenericLogFormDialog;
 import net.odyssi.log4jb.actions.dialogs.forms.GenericLogModel;
+import net.odyssi.log4jb.logging.LoggingStrategy;
+import net.odyssi.log4jb.logging.Slf4jLoggingStrategy;
+import net.odyssi.log4jb.util.MethodSignatureBuilder;
 import net.odyssi.log4jb.visitors.DeclareLoggerVisitor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -27,9 +29,7 @@ import java.util.stream.Collectors;
  */
 public class GenericLogAction extends AnAction {
 
-    private static final String guardedTemplate = "if(%s.is%sEnabled()) {\n\t%s.%s(\"%s%s%s\"%s);\n}\n";
-    private static final String unguardedTemplate = "%s.%s(\"%s%s%s\"%s);\n";
-    private static final String loggerObjectName = "logger";
+    private final LoggingStrategy strategy = new Slf4jLoggingStrategy();
 
     @Override
     public void update(@NotNull AnActionEvent e) {
@@ -136,7 +136,7 @@ public class GenericLogAction extends AnAction {
      * @return The log statement text
      */
     protected String buildLogStatement(GenericLogModel logModel, PsiMethod selectedMethod) {
-        String methodDeclaration = getMethodDeclaration(selectedMethod);
+        String methodDeclaration = MethodSignatureBuilder.build(selectedMethod);
         String logLevelOperation = getLogLevelOperation(logModel.getLogLevel());
         String logMessage = (logModel.getLogMessage() != null && !logModel.getLogMessage().isEmpty())
                 ? " - " + logModel.getLogMessage() : "";
@@ -151,33 +151,10 @@ public class GenericLogAction extends AnAction {
                 logModel.getSelectedMethodParameters()
         );
 
-        // ERROR level doesn't need a guard — it's virtually never disabled
-        if ("error".equals(logLevelOperation)) {
-            return unguardedTemplate.formatted(
-                    loggerObjectName, logLevelOperation,
-                    methodDeclaration, logMessage, variableLogStatement, variableLogValues
-            );
-        }
+        String message = methodDeclaration + logMessage + variableLogStatement;
+        String args = variableLogValues.isEmpty() ? "" : variableLogValues.substring(2); // strip leading ", "
 
-        return guardedTemplate.formatted(
-                loggerObjectName, capitalizeFirstLetter(logLevelOperation),
-                loggerObjectName, logLevelOperation,
-                methodDeclaration, logMessage, variableLogStatement, variableLogValues
-        );
-    }
-
-    /**
-     * Builds the method signature string for use in log messages.
-     * Example: "myMethod(String,int)"
-     */
-    public String getMethodDeclaration(PsiMethod method) {
-        final var methodName = method.getName();
-        final var parameterTypes = Arrays.stream(method.getParameterList().getParameters())
-                .map(PsiParameter::getType)
-                .map(PsiType::getPresentableText)
-                .collect(Collectors.joining(","));
-
-        return String.format("%s(%s)", methodName, parameterTypes);
+        return strategy.getLogStatement(logLevelOperation, message, args);
     }
 
     /**
@@ -219,18 +196,14 @@ public class GenericLogAction extends AnAction {
      * Note: SLF4J has no fatal() method, so FATAL maps to error().
      */
     protected String getLogLevelOperation(String logLevel) {
+        if (logLevel == null) {
+            return "debug";
+        }
         return switch (logLevel) {
             case "DEBUG", "INFO", "WARN", "ERROR", "TRACE" -> logLevel.toLowerCase();
             case "FATAL" -> "error";
             default -> "debug";
         };
-    }
-
-    private String capitalizeFirstLetter(String str) {
-        if (str == null || str.isEmpty()) {
-            return str;
-        }
-        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
     /**

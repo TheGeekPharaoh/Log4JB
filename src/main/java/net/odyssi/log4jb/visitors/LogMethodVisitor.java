@@ -2,9 +2,9 @@ package net.odyssi.log4jb.visitors;
 
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
-
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import net.odyssi.log4jb.logging.LoggingStrategy;
+import net.odyssi.log4jb.logging.Slf4jLoggingStrategy;
+import net.odyssi.log4jb.util.MethodSignatureBuilder;
 
 /**
  * A PSI visitor that instruments a Java method with start/end and exception log statements.
@@ -18,13 +18,19 @@ import java.util.stream.Collectors;
 public class LogMethodVisitor extends JavaRecursiveElementVisitor {
 
     private final PsiMethod psiMethod;
+    private final LoggingStrategy strategy;
     private final String methodSignature;
     private final String startMessage;
     private final String endMessage;
 
     public LogMethodVisitor(PsiMethod psiMethod) {
+        this(psiMethod, new Slf4jLoggingStrategy());
+    }
+
+    public LogMethodVisitor(PsiMethod psiMethod, LoggingStrategy strategy) {
         this.psiMethod = psiMethod;
-        this.methodSignature = buildMethodSignature(psiMethod);
+        this.strategy = strategy;
+        this.methodSignature = MethodSignatureBuilder.build(psiMethod);
         this.startMessage = String.format("%s - start", this.methodSignature);
         this.endMessage = String.format("%s - end", this.methodSignature);
     }
@@ -41,14 +47,14 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
         final var bodyText = body.getText();
 
         // 1. Add "start" log statement (check by message content, not exact statement text)
-        final var startLogStatementText = String.format("if(logger.isDebugEnabled()) { logger.debug(\"%s\"); }", startMessage);
+        final var startLogStatementText = strategy.getGuardedDebugStatement(startMessage, "");
         if (!bodyText.contains(startMessage)) {
             final var startLogStatement = factory.createStatementFromText(startLogStatementText, method);
             body.addAfter(startLogStatement, body.getLBrace());
         }
 
         // 2. Add "end" log statements before all return statements (excluding those in lambdas/anonymous classes)
-        final var endLogStatementText = String.format("if(logger.isDebugEnabled()) { logger.debug(\"%s\"); }", endMessage);
+        final var endLogStatementText = strategy.getGuardedDebugStatement(endMessage, "");
         final var returnStatements = PsiTreeUtil.findChildrenOfType(body, PsiReturnStatement.class);
         for (PsiReturnStatement returnStatement : returnStatements) {
             // Skip return statements that belong to nested lambdas or anonymous classes
@@ -96,21 +102,22 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
             // Check if the catch block is empty (contains no statements).
             if (catchBlock.getStatementCount() == 0) {
                 // Empty block: log a warning that the exception is ignored.
-                logStatementText = String.format("logger.warn(\"%s - exception ignored\", %s);", this.methodSignature, exceptionName);
+                logStatementText = strategy.getWarnStatement(
+                        this.methodSignature + " - exception ignored", exceptionName);
             } else {
                 // Block has statements: log an error.
-                logStatementText = String.format("logger.error(\"%s - caught exception\", %s);", this.methodSignature, exceptionName);
+                logStatementText = strategy.getErrorStatement(
+                        this.methodSignature + " - caught exception", exceptionName);
             }
 
-            // Avoid adding a duplicate — check for the presence of a logger call referencing the exception variable.
+            // Avoid adding a duplicate — check for the presence of an existing logger call.
             final String catchBlockText = catchBlock.getText();
-            if (catchBlockText.contains("logger.warn(") || catchBlockText.contains("logger.error(")) {
-                // A logger statement already exists in this catch block — skip
+            final String loggerName = strategy.getLoggerFieldName();
+            if (catchBlockText.contains(loggerName + ".warn(") || catchBlockText.contains(loggerName + ".error(")) {
                 continue;
             }
 
             final PsiStatement logStatement = factory.createStatementFromText(logStatementText, catchBlock);
-            // Add the log statement as the first line inside the catch block.
             catchBlock.addAfter(logStatement, catchBlock.getLBrace());
         }
     }
@@ -119,23 +126,9 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
      * Adds the final "end" log statement before the closing brace of a code block.
      */
     private void addFinalEndLog(PsiCodeBlock body, PsiElementFactory factory) {
-        final var endLogStatementText = String.format("if(logger.isDebugEnabled()) { logger.debug(\"%s\"); }", endMessage);
+        final var endLogStatementText = strategy.getGuardedDebugStatement(endMessage, "");
         final var endLogStatement = factory.createStatementFromText(endLogStatementText, body);
         body.addBefore(endLogStatement, body.getRBrace());
-    }
-
-    /**
-     * Builds the method signature part of the log message.
-     * Example: "myMethod(String,int,List)"
-     */
-    private String buildMethodSignature(PsiMethod method) {
-        final var methodName = method.getName();
-        final var parameterTypes = Arrays.stream(method.getParameterList().getParameters())
-                .map(PsiParameter::getType)
-                .map(PsiType::getPresentableText)
-                .collect(Collectors.joining(","));
-
-        return String.format("%s(%s)", methodName, parameterTypes);
     }
 
     /**
@@ -148,7 +141,6 @@ public class LogMethodVisitor extends JavaRecursiveElementVisitor {
             if (parent == method) {
                 return true;
             }
-            // If we hit a lambda or anonymous class before reaching the method, it's nested
             if (parent instanceof PsiLambdaExpression || parent instanceof PsiClass) {
                 return false;
             }

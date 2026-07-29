@@ -2,11 +2,11 @@ package net.odyssi.log4jb.visitors;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
+import net.odyssi.log4jb.util.MethodSignatureBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A PSI visitor that finds logger calls within methods and ensures the method signature
@@ -25,7 +25,7 @@ public class ReapplyMethodLoggingVisitor extends JavaRecursiveElementVisitor {
     public void visitMethod(PsiMethod method) {
         super.visitMethod(method);
 
-        String correctSignature = buildMethodSignature(method);
+        String correctSignature = MethodSignatureBuilder.build(method);
 
         method.accept(new JavaRecursiveElementVisitor() {
             @Override
@@ -99,23 +99,4 @@ public class ReapplyMethodLoggingVisitor extends JavaRecursiveElementVisitor {
         }
     }
 
-    /**
-     * Constructs the expected method signature string from a PsiMethod.
-     * Example: "myMethod(String,int)"
-     */
-    private String buildMethodSignature(PsiMethod method) {
-        String methodName = method.getName();
-        String params = Arrays.stream(method.getParameterList().getParameters())
-                .map(this::getParameterType)
-                .collect(Collectors.joining(","));
-        return String.format("%s(%s)", methodName, params);
-    }
-
-    /**
-     * Gets the simple name of a parameter's type.
-     */
-    private String getParameterType(PsiParameter p) {
-        // getPresentableText() gives the simple name, e.g., "String" instead of "java.lang.String"
-        return p.getType().getPresentableText();
-    }
 }

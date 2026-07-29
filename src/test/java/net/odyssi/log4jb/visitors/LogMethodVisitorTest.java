@@ -184,6 +184,62 @@ public class LogMethodVisitorTest extends LightJavaCodeInsightFixtureTestCase {
         assertTrue("End message should appear before a return statement", endIndex < firstReturnIndex);
     }
 
+    public void testSkipsReturnStatementsInsideLambdas() {
+        PsiClass psiClass = setupClassWithLogger(
+                "    public void processItems(java.util.List items) {\n" +
+                "        items.forEach(item -> {\n" +
+                "            if (item == null) {\n" +
+                "                return;\n" +
+                "            }\n" +
+                "        });\n" +
+                "    }"
+        );
+
+        PsiMethod method = psiClass.findMethodsByName("processItems", false)[0];
+
+        WriteCommandAction.runWriteCommandAction(getProject(), () ->
+                method.accept(new LogMethodVisitor(method)));
+
+        String bodyText = method.getBody().getText();
+        assertTrue("Should contain start message", bodyText.contains("- start"));
+        assertTrue("Should contain end message", bodyText.contains("- end"));
+
+        // The end message should NOT appear inside the lambda (before the lambda's return)
+        int forEachIndex = bodyText.indexOf("forEach");
+        int closingLambdaIndex = bodyText.indexOf("});");
+        if (forEachIndex >= 0 && closingLambdaIndex >= 0) {
+            String lambdaBody = bodyText.substring(forEachIndex, closingLambdaIndex);
+            assertFalse("Should not insert end log inside lambda body",
+                    lambdaBody.contains("- end"));
+        }
+    }
+
+    public void testSkipsReturnStatementsInsideAnonymousClasses() {
+        PsiClass psiClass = setupClassWithLogger(
+                "    public void doWork() {\n" +
+                "        Runnable r = new Runnable() {\n" +
+                "            public void run() {\n" +
+                "                return;\n" +
+                "            }\n" +
+                "        };\n" +
+                "        r.run();\n" +
+                "    }"
+        );
+
+        PsiMethod method = psiClass.findMethodsByName("doWork", false)[0];
+
+        WriteCommandAction.runWriteCommandAction(getProject(), () ->
+                method.accept(new LogMethodVisitor(method)));
+
+        String bodyText = method.getBody().getText();
+        assertTrue("Should contain start message", bodyText.contains("doWork() - start"));
+        assertTrue("Should contain end message at method level", bodyText.contains("doWork() - end"));
+
+        // The end log should only appear once (at method level), not inside the anonymous class
+        int endCount = countOccurrences(bodyText, "doWork() - end");
+        assertEquals("End message should appear exactly once (not inside anonymous class)", 1, endCount);
+    }
+
     private int countOccurrences(String text, String substring) {
         int count = 0;
         int idx = 0;

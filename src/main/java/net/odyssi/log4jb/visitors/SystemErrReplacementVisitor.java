@@ -2,27 +2,36 @@ package net.odyssi.log4jb.visitors;
 
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
+import net.odyssi.log4jb.logging.LoggingStrategy;
+import net.odyssi.log4jb.logging.Slf4jLoggingStrategy;
+import net.odyssi.log4jb.util.MethodSignatureBuilder;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * A PSI visitor that replaces all calls to {@code System.err.println()} with
- * SLF4J {@code logger.error()} statements.
+ * A PSI visitor that replaces all calls to {@code System.err.println()} and {@code System.err.print()}
+ * with error-level log statements using the configured {@link LoggingStrategy}.
  * <p>
  * This visitor intelligently converts string literals and concatenations into
- * parameterized SLF4J messages.
+ * parameterized log messages.
  */
 public class SystemErrReplacementVisitor extends JavaRecursiveElementVisitor {
 
+    private final LoggingStrategy strategy;
     private String currentMethodSignature = "";
+
+    public SystemErrReplacementVisitor() {
+        this(new Slf4jLoggingStrategy());
+    }
+
+    public SystemErrReplacementVisitor(LoggingStrategy strategy) {
+        this.strategy = strategy;
+    }
 
     @Override
     public void visitMethod(PsiMethod method) {
-        // Store the signature of the current method to use in log messages.
-        this.currentMethodSignature = buildMethodSignature(method);
+        this.currentMethodSignature = MethodSignatureBuilder.build(method);
         super.visitMethod(method);
         this.currentMethodSignature = "";
     }
@@ -31,7 +40,6 @@ public class SystemErrReplacementVisitor extends JavaRecursiveElementVisitor {
     public void visitMethodCallExpression(PsiMethodCallExpression expression) {
         super.visitMethodCallExpression(expression);
 
-        // Check if this is a System.err.println() or System.err.print() call.
         if (!isSystemErrPrintCall(expression)) {
             return;
         }
@@ -42,20 +50,17 @@ public class SystemErrReplacementVisitor extends JavaRecursiveElementVisitor {
         final String newStatementText;
 
         if (argumentList.getExpressionCount() == 0) {
-            // No-arg println() — replace with an empty error log
-            final String message = currentMethodSignature + " - (empty line)";
-            newStatementText = String.format("logger.error(\"%s\");", message);
+            String message = currentMethodSignature + " - (empty line)";
+            newStatementText = strategy.getErrorStatement(message, "");
         } else if (argumentList.getExpressionCount() == 1) {
             final PsiExpression originalArgument = argumentList.getExpressions()[0];
 
             final StringBuilder messageFormat = new StringBuilder();
             final List<String> logArguments = new ArrayList<>();
 
-            // Prepend the method signature to the log message.
             messageFormat.append(currentMethodSignature).append(" - ");
 
             if (originalArgument instanceof PsiPolyadicExpression polyadicExpression) {
-                // Handle string concatenations (e.g., "Error: " + code).
                 for (PsiExpression operand : polyadicExpression.getOperands()) {
                     if (operand instanceof PsiLiteralExpression literal && literal.getValue() instanceof String strValue) {
                         messageFormat.append(strValue);
@@ -65,7 +70,6 @@ public class SystemErrReplacementVisitor extends JavaRecursiveElementVisitor {
                     }
                 }
             } else {
-                // Handle single arguments (literals, variables, etc.).
                 if (originalArgument instanceof PsiLiteralExpression literal && literal.getValue() instanceof String strValue) {
                     messageFormat.append(strValue);
                 } else {
@@ -74,15 +78,12 @@ public class SystemErrReplacementVisitor extends JavaRecursiveElementVisitor {
                 }
             }
 
-            // Construct the final logger call. No guard statement is needed for the error level.
-            final String argsString = logArguments.isEmpty() ? "" : ", " + String.join(", ", logArguments);
-            newStatementText = String.format("logger.error(\"%s\"%s);", messageFormat, argsString);
+            String args = String.join(", ", logArguments);
+            newStatementText = strategy.getErrorStatement(messageFormat.toString(), args);
         } else {
-            // Unsupported argument count — skip
             return;
         }
 
-        // Replace the old statement with the new one.
         final PsiStatement newStatement = factory.createStatementFromText(newStatementText, expression);
         final PsiStatement parentStatement = PsiTreeUtil.getParentOfType(expression, PsiStatement.class);
         if (parentStatement != null) {
@@ -98,14 +99,5 @@ public class SystemErrReplacementVisitor extends JavaRecursiveElementVisitor {
         }
         final PsiExpression qualifier = methodExpression.getQualifierExpression();
         return qualifier != null && "System.err".equals(qualifier.getText());
-    }
-
-    private String buildMethodSignature(PsiMethod method) {
-        final String methodName = method.getName();
-        final String parameterTypes = Arrays.stream(method.getParameterList().getParameters())
-                .map(PsiParameter::getType)
-                .map(PsiType::getPresentableText)
-                .collect(Collectors.joining(","));
-        return String.format("%s(%s)", methodName, parameterTypes);
     }
 }

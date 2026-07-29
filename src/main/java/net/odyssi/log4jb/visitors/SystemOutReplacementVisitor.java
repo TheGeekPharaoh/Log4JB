@@ -2,30 +2,37 @@ package net.odyssi.log4jb.visitors;
 
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
+import net.odyssi.log4jb.logging.LoggingStrategy;
+import net.odyssi.log4jb.logging.Slf4jLoggingStrategy;
+import net.odyssi.log4jb.util.MethodSignatureBuilder;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * A PSI visitor that replaces all calls to {@code System.out.println()} with
- * guarded SLF4J {@code logger.debug()} statements.
+ * A PSI visitor that replaces all calls to {@code System.out.println()} and {@code System.out.print()}
+ * with guarded debug-level log statements using the configured {@link LoggingStrategy}.
  * <p>
  * This visitor intelligently converts string literals and concatenations into
- * parameterized SLF4J messages.
+ * parameterized log messages.
  */
 public class SystemOutReplacementVisitor extends JavaRecursiveElementVisitor {
 
+    private final LoggingStrategy strategy;
     private String currentMethodSignature = "";
+
+    public SystemOutReplacementVisitor() {
+        this(new Slf4jLoggingStrategy());
+    }
+
+    public SystemOutReplacementVisitor(LoggingStrategy strategy) {
+        this.strategy = strategy;
+    }
 
     @Override
     public void visitMethod(PsiMethod method) {
-        // Store the signature of the current method to use in log messages.
-        this.currentMethodSignature = buildMethodSignature(method);
-        // Continue traversing into the method's body.
+        this.currentMethodSignature = MethodSignatureBuilder.build(method);
         super.visitMethod(method);
-        // Clear the signature after leaving the method.
         this.currentMethodSignature = "";
     }
 
@@ -33,7 +40,6 @@ public class SystemOutReplacementVisitor extends JavaRecursiveElementVisitor {
     public void visitMethodCallExpression(PsiMethodCallExpression expression) {
         super.visitMethodCallExpression(expression);
 
-        // Check if this is a System.out.println() or System.out.print() call.
         if (!isSystemOutPrintCall(expression)) {
             return;
         }
@@ -44,21 +50,17 @@ public class SystemOutReplacementVisitor extends JavaRecursiveElementVisitor {
         final String newStatementText;
 
         if (argumentList.getExpressionCount() == 0) {
-            // No-arg println() — replace with an empty debug log
-            final String message = currentMethodSignature + " - (empty line)";
-            newStatementText = String.format("if(logger.isDebugEnabled()) { logger.debug(\"%s\"); }", message);
+            String message = currentMethodSignature + " - (empty line)";
+            newStatementText = strategy.getGuardedDebugStatement(message, "");
         } else if (argumentList.getExpressionCount() == 1) {
             final PsiExpression originalArgument = argumentList.getExpressions()[0];
 
-            // Build the new log message and arguments.
             final StringBuilder messageFormat = new StringBuilder();
             final List<String> logArguments = new ArrayList<>();
 
-            // Prepend the method signature to the log message.
             messageFormat.append(currentMethodSignature).append(" - ");
 
             if (originalArgument instanceof PsiPolyadicExpression polyadicExpression) {
-                // Handle string concatenations (e.g., "Hello " + name).
                 for (PsiExpression operand : polyadicExpression.getOperands()) {
                     if (operand instanceof PsiLiteralExpression literal && literal.getValue() instanceof String strValue) {
                         messageFormat.append(strValue);
@@ -68,7 +70,6 @@ public class SystemOutReplacementVisitor extends JavaRecursiveElementVisitor {
                     }
                 }
             } else {
-                // Handle single arguments (literals, variables, etc.).
                 if (originalArgument instanceof PsiLiteralExpression literal && literal.getValue() instanceof String strValue) {
                     messageFormat.append(strValue);
                 } else {
@@ -77,15 +78,12 @@ public class SystemOutReplacementVisitor extends JavaRecursiveElementVisitor {
                 }
             }
 
-            // Construct the final logger call.
-            final String argsString = logArguments.isEmpty() ? "" : ", " + String.join(", ", logArguments);
-            newStatementText = String.format("if(logger.isDebugEnabled()) { logger.debug(\"%s\"%s); }", messageFormat, argsString);
+            String args = String.join(", ", logArguments);
+            newStatementText = strategy.getGuardedDebugStatement(messageFormat.toString(), args);
         } else {
-            // Unsupported argument count — skip
             return;
         }
 
-        // Replace the old statement with the new one.
         final PsiStatement newStatement = factory.createStatementFromText(newStatementText, expression);
         final PsiStatement parentStatement = PsiTreeUtil.getParentOfType(expression, PsiStatement.class);
         if (parentStatement != null) {
@@ -101,18 +99,5 @@ public class SystemOutReplacementVisitor extends JavaRecursiveElementVisitor {
         }
         final PsiExpression qualifier = methodExpression.getQualifierExpression();
         return qualifier != null && "System.out".equals(qualifier.getText());
-    }
-
-    private String buildMethodSignature(PsiMethod method) {
-        if (method == null) {
-            return "unknown()";
-        }
-        final String methodName = method.getName();
-        final String parameterTypes = Arrays.stream(method.getParameterList().getParameters())
-                .map(PsiParameter::getType)
-                .map(PsiType::getPresentableText)
-                .collect(Collectors.joining(","));
-
-        return String.format("%s(%s)", methodName, parameterTypes);
     }
 }
