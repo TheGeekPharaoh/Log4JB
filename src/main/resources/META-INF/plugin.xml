@@ -20,7 +20,7 @@
   ]]></description>
 
     <change-notes><![CDATA[
-    What's new in Log4JB v0.6.0:
+    What's new in Log4JB v0.6.1:
     <ul>
         <li>Fixed duplicate log statements being inserted when "Log This Method" or "Log This Class" is invoked multiple times on the same method</li>
         <li>Improved logger declaration to detect existing SLF4J logger fields regardless of field name</li>

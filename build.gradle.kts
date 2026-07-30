@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "net.odyssi"
-version = "0.6.0"
+version = "0.6.1"
 
 repositories {
     mavenCentral()
@@ -37,11 +37,11 @@ intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "251"
-            untilBuild = "253.*"
+            untilBuild = "263.*"
         }
 
         changeNotes = """
-      What's new in Log4JB v0.6.0:
+      What's new in Log4JB v0.6.1:
       <ul>
         <li>Fixed duplicate log statements being inserted when "Log This Method" or "Log This Class" is invoked multiple times on the same method</li>
         <li>Improved logger declaration to detect existing SLF4J logger fields regardless of field name</li>
